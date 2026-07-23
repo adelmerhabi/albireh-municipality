@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "../components/PageShell";
+import { VillageGallery, type GalleryPhoto } from "../components/VillageGallery";
 import { getGalleryImages } from "../lib/content";
 
 export const metadata: Metadata = {
@@ -85,6 +86,17 @@ const crops = [
 
 export default async function AboutPage() {
   const adminPhotos = await getGalleryImages();
+  const galleryPhotos: GalleryPhoto[] = [
+    ...gallery.map((photo) => ({
+      src: photo.src,
+      alt: photo.alt,
+      credit: photo.credit,
+    })),
+    ...adminPhotos.map((photo) => ({
+      src: photo.url,
+      alt: photo.alt || "صورة من البيرة",
+    })),
+  ];
 
   return (
     <PageShell>
@@ -221,26 +233,7 @@ export default async function AboutPage() {
             <p className="eyebrow">صور من البيرة</p>
             <h2>معرض الصور</h2>
           </div>
-          <div className="village-gallery">
-            {gallery.map((photo) => (
-              <figure className="village-gallery__item" key={photo.src}>
-                <img src={photo.src} alt={photo.alt} loading="lazy" />
-                {photo.credit ? <figcaption>{photo.credit}</figcaption> : null}
-              </figure>
-            ))}
-            {adminPhotos.map((photo, index) => (
-              <figure
-                className="village-gallery__item"
-                key={`admin-${index}`}
-              >
-                <img
-                  src={photo.url}
-                  alt={photo.alt || "صورة من البيرة"}
-                  loading="lazy"
-                />
-              </figure>
-            ))}
-          </div>
+          <VillageGallery photos={galleryPhotos} />
         </div>
       </section>
 
