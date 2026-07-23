@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "../../db";
 import { ensureRuntimeSchema } from "../../db/runtime";
 import {
@@ -303,6 +303,54 @@ export async function getPublishedContent({
     .filter((row) => !type || row.type === type)
     .slice(0, limit)
     .map((row) => toPublicContent(row));
+}
+
+export type GalleryImage = {
+  url: string;
+  alt: string | null;
+};
+
+// All images uploaded by admins inside published "gallery" items, newest first.
+export async function getGalleryImages(limit = 80): Promise<GalleryImage[]> {
+  try {
+    await ensureRuntimeSchema();
+    const db = getDb();
+    const items = await db
+      .select({ id: contentItems.id })
+      .from(contentItems)
+      .where(
+        and(
+          eq(contentItems.status, "published"),
+          eq(contentItems.type, "gallery"),
+        ),
+      )
+      .orderBy(desc(contentItems.publishedAt))
+      .limit(50);
+
+    if (items.length === 0) return [];
+
+    const rows = await db
+      .select()
+      .from(contentAttachments)
+      .where(
+        and(
+          inArray(
+            contentAttachments.contentId,
+            items.map((item) => item.id),
+          ),
+          eq(contentAttachments.kind, "image"),
+        ),
+      )
+      .orderBy(desc(contentAttachments.contentId), contentAttachments.position)
+      .limit(limit);
+
+    return rows.map((row) => ({
+      url: `/media/${encodeURIComponent(row.mediaKey)}`,
+      alt: row.altText,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export async function getAdminContent(): Promise<ContentRow[]> {

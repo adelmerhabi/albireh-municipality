@@ -11,6 +11,7 @@ const allowedTypes = new Set<ContentType>([
   "event",
   "project",
   "donation",
+  "gallery",
 ]);
 
 export async function GET() {
@@ -46,9 +47,16 @@ export async function POST(request: Request) {
     if (!allowedTypes.has(type)) {
       return Response.json({ error: "نوع المحتوى غير صالح" }, { status: 400 });
     }
-    if (!title || !excerpt) {
+    if (!title) {
+      return Response.json({ error: "العنوان مطلوب" }, { status: 400 });
+    }
+    // A photo-gallery item needs a title + images, but no summary text.
+    if (type !== "gallery" && !excerpt) {
+      return Response.json({ error: "الملخص مطلوب" }, { status: 400 });
+    }
+    if (type === "gallery" && status === "published" && attachments.length === 0) {
       return Response.json(
-        { error: "العنوان والملخص مطلوبان" },
+        { error: "أضف صورة واحدة على الأقل إلى المعرض قبل النشر" },
         { status: 400 },
       );
     }

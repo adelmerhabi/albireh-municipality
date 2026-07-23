@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "../components/PageShell";
+import { getGalleryImages } from "../lib/content";
 
 export const metadata: Metadata = {
   title: "عن البيرة",
   description:
     "هوية بلدة البيرة – عكار: شعار البلدية وقيمها، تاريخها كمركز لمنطقة الدريب («بيرة الحكم»)، سرايها ومسجدها الأثري، وطبيعتها البازلتية.",
 };
+
+// Reads admin-uploaded gallery photos from the database on each request.
+export const dynamic = "force-dynamic";
 
 const MAP_URL = "https://maps.app.goo.gl/HJ8JEpovcfEXJt2u6";
 
@@ -56,10 +60,6 @@ const gallery: Array<{ src: string; alt: string; credit?: string }> = [
     alt: "الرواق الداخلي لمسجد البيرة بأقواسه وحجارته",
     credit: "تصوير: عدنان مرعب",
   },
-  {
-    src: "/village/saray3.jpg",
-    alt: "جدران وأقواس سرايا البيرة التاريخية",
-  },
 ];
 
 const didYouKnow: string[] = [
@@ -83,7 +83,9 @@ const crops = [
   "الهليون",
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const adminPhotos = await getGalleryImages();
+
   return (
     <PageShell>
       <section
@@ -180,6 +182,14 @@ export default function AboutPage() {
             <p className="eyebrow">قصة مكان</p>
             <h2>سرايا البيرة… شاهدٌ على حكم عكار</h2>
           </div>
+          <figure className="about-figure about-figure--wide">
+            <img
+              src="/village/saray3.jpg"
+              alt="جدران وأقواس سرايا البيرة التاريخية"
+              loading="lazy"
+            />
+            <figcaption>سرايا البيرة التراثية، من معالم «بيرة الحكم».</figcaption>
+          </figure>
           <div className="about-prose">
             <p>
               تقف سرايا البيرة شامخةً في قلب عكار، لا كقلعةٍ حجريةٍ فحسب، بل
@@ -216,6 +226,18 @@ export default function AboutPage() {
               <figure className="village-gallery__item" key={photo.src}>
                 <img src={photo.src} alt={photo.alt} loading="lazy" />
                 {photo.credit ? <figcaption>{photo.credit}</figcaption> : null}
+              </figure>
+            ))}
+            {adminPhotos.map((photo, index) => (
+              <figure
+                className="village-gallery__item"
+                key={`admin-${index}`}
+              >
+                <img
+                  src={photo.url}
+                  alt={photo.alt || "صورة من البيرة"}
+                  loading="lazy"
+                />
               </figure>
             ))}
           </div>

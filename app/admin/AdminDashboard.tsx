@@ -8,13 +8,19 @@ import type {
 } from "../lib/requests";
 
 type AdminItem = typeof contentItems.$inferSelect;
-type ContentFormType = "announcement" | "event" | "project" | "donation";
+type ContentFormType =
+  | "announcement"
+  | "event"
+  | "project"
+  | "donation"
+  | "gallery";
 
 const contentTypes: Array<[ContentFormType, string]> = [
   ["announcement", "إعلان"],
   ["event", "فعالية"],
   ["project", "مشروع"],
   ["donation", "حملة مساعدة"],
+  ["gallery", "معرض صور"],
 ];
 
 const statusLabels: Record<string, string> = {
@@ -297,21 +303,35 @@ export function AdminDashboard({
             </div>
 
             <div className="field">
-              <label htmlFor="excerpt">ملخص قصير</label>
+              <label htmlFor="excerpt">
+                {selectedType === "gallery" ? "ملخص قصير (اختياري)" : "ملخص قصير"}
+              </label>
               <textarea
                 className="form-control"
                 id="excerpt"
                 name="excerpt"
                 maxLength={320}
                 placeholder={contentTypeGuide(selectedType).excerptPlaceholder}
-                required
+                required={selectedType !== "gallery"}
               />
             </div>
 
-            <div className="field">
-              <label htmlFor="body">التفاصيل</label>
-              <textarea className="form-control" id="body" name="body" />
-            </div>
+            {selectedType !== "gallery" ? (
+              <div className="field">
+                <label htmlFor="body">التفاصيل</label>
+                <textarea className="form-control" id="body" name="body" />
+              </div>
+            ) : null}
+
+            {selectedType === "gallery" ? (
+              <div className="content-type-fields">
+                <p className="field-help">
+                  اختر الصور التي تريد إضافتها إلى «معرض الصور» في صفحة «عن
+                  البيرة». ستظهر كل الصور المنشورة معاً في المعرض العام. لإضافة
+                  المزيد من الصور لاحقاً، أنشئ معرضاً جديداً في أي وقت.
+                </p>
+              </div>
+            ) : null}
 
             {selectedType === "announcement" ? (
               <div className="content-type-fields">
@@ -741,6 +761,15 @@ function contentTypeGuide(type: ContentFormType) {
         "أدخل رقم Wish المعتمد لهذه الحملة واسم صاحب الحساب حتى يعرف الزائر أين يحوّل بأمان.",
       titlePlaceholder: "مثلاً: حملة دعم العائلات المحتاجة",
       excerptPlaceholder: "لمن الحملة وما نوع المساعدة المطلوبة؟",
+    };
+  }
+  if (type === "gallery") {
+    return {
+      title: "معرض صور",
+      description:
+        "ارفع صوراً من البيرة لتظهر في «معرض الصور» ضمن صفحة «عن البيرة». يكفي عنوانٌ للمجموعة واختيار الصور.",
+      titlePlaceholder: "مثلاً: صور من ساحة البلدة",
+      excerptPlaceholder: "وصفٌ مختصر للمجموعة (اختياري)...",
     };
   }
   return {

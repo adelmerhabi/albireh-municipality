@@ -2343,3 +2343,11 @@ textarea.form-control {
   padding: 3px 9px;
   border-radius: 999px;
 }
+
+.about-figure--wide {
+  margin-bottom: 22px;
+}
+.about-figure--wide img {
+  max-height: 440px;
+  object-fit: cover;
+}
