@@ -2118,16 +2118,27 @@ textarea.form-control {
   box-shadow: var(--shadow);
 }
 .landmark-card__visual {
-  height: 150px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, var(--green-900), var(--green-700));
-  color: rgba(255, 255, 255, 0.92);
+  position: relative;
+  margin: 0;
+  height: 220px;
+  overflow: hidden;
+  background: var(--green-900);
 }
-.landmark-card__visual span {
-  font-size: 1.6rem;
-  font-weight: 700;
-  letter-spacing: 1px;
+.landmark-card__visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.landmark-card__visual figcaption {
+  position: absolute;
+  inset-inline-end: 8px;
+  inset-block-end: 8px;
+  background: rgba(13, 59, 44, 0.72);
+  color: #fff;
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: 999px;
 }
 .landmark-card__body {
   padding: 20px 22px 24px;
@@ -2215,4 +2226,120 @@ textarea.form-control {
   line-height: 1.9;
   border-top: 1px solid var(--line);
   padding-top: 18px;
+}
+
+/* ===== identity hero, values, gallery ===== */
+.identity-hero {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  isolation: isolate;
+}
+.identity-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(13, 59, 44, 0.62),
+    rgba(13, 59, 44, 0.82)
+  );
+  z-index: -1;
+}
+.identity-hero__inner {
+  position: relative;
+  padding-block: clamp(60px, 12vw, 120px);
+  text-align: center;
+}
+.identity-hero__inner h1 {
+  font-size: clamp(2.1rem, 6vw, 3.4rem);
+  margin: 8px 0 14px;
+  color: #fff;
+}
+.identity-hero__lead {
+  max-width: 60ch;
+  margin: 0 auto 22px;
+  line-height: 1.9;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1.05rem;
+}
+.value-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+.value-chip {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  color: #fff;
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-weight: 700;
+  backdrop-filter: blur(2px);
+}
+.identity-hero__credit {
+  position: absolute;
+  inset-inline-end: 14px;
+  inset-block-end: 10px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+.value-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--green-700);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow);
+}
+.value-card strong {
+  display: block;
+  font-size: 1.3rem;
+  color: var(--green-900);
+  margin-bottom: 8px;
+}
+.value-card span {
+  color: var(--muted);
+  line-height: 1.8;
+}
+.village-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.village-gallery__item {
+  position: relative;
+  margin: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  aspect-ratio: 4 / 3;
+  background: var(--green-900);
+}
+.village-gallery__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.village-gallery__item:hover img {
+  transform: scale(1.05);
+}
+.village-gallery__item figcaption {
+  position: absolute;
+  inset-inline-end: 8px;
+  inset-block-end: 8px;
+  background: rgba(13, 59, 44, 0.72);
+  color: #fff;
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: 999px;
 }
