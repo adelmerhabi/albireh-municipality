@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 const navigation = [
   ["الرئيسية", "/"],
+  ["عن البيرة", "/about"],
   ["الإعلانات", "/announcements"],
   ["الفعاليات", "/events"],
   ["المشاريع", "/projects"],

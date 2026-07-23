@@ -2050,3 +2050,169 @@ textarea.form-control {
     grid-column: auto;
   }
 }
+
+/* ===== "عن البيرة" identity page ===== */
+.about-hero h1 {
+  max-width: 18ch;
+}
+.about-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+}
+.about-fact {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+.about-fact small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+.about-fact strong {
+  font-size: 1.15rem;
+  color: var(--green-900);
+}
+.about-figure {
+  margin: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+}
+.about-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+.about-figure figcaption {
+  padding: 12px 18px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  background: var(--white);
+}
+.about-prose {
+  max-width: 70ch;
+  line-height: 2;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+.cards-grid--two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 22px;
+}
+.landmark-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.landmark-card__visual {
+  height: 150px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--green-900), var(--green-700));
+  color: rgba(255, 255, 255, 0.92);
+}
+.landmark-card__visual span {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.landmark-card__body {
+  padding: 20px 22px 24px;
+}
+.landmark-card__body h3 {
+  margin: 0 0 6px;
+  color: var(--green-900);
+}
+.landmark-card__period {
+  color: var(--red-700);
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin: 0 0 10px;
+}
+.landmark-card__body p {
+  line-height: 1.9;
+  color: var(--ink);
+}
+.about-note {
+  background: var(--green-100);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 18px;
+  color: var(--green-900);
+  margin-bottom: 18px;
+  font-size: 0.95rem;
+}
+.crop-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.crop-list li {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 9px 18px;
+  color: var(--green-900);
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+.dyk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+.dyk-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.dyk-card p {
+  margin: 0;
+  line-height: 1.9;
+  color: rgba(255, 255, 255, 0.94);
+}
+.dyk-card__mark {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--white);
+  color: var(--green-900);
+  font-weight: 800;
+}
+.about-location {
+  text-align: center;
+}
+.about-location p {
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+.about-sources {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.9;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
