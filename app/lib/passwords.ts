@@ -1,5 +1,8 @@
+// Cloudflare Workers caps PBKDF2 at 100_000 iterations; using more makes the
+// runtime throw ("iteration counts above 100000 are not supported"), which the
+// verify path would swallow and reject every login. Stay at the platform max.
 export async function hashPassword(password: string) {
-  const iterations = 210_000;
+  const iterations = 100_000;
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const derived = await derive(password, salt, iterations);
   return `pbkdf2-sha256$${iterations}$${toBase64(salt)}$${toBase64(derived)}`;

@@ -108,12 +108,12 @@ iterations — the format the login route expects):
 
 ```powershell
 # Windows PowerShell — replace YOUR_PASSWORD
-$p='YOUR_PASSWORD'; $s=[byte[]]::new(16); [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($s); $k=[System.Security.Cryptography.Rfc2898DeriveBytes]::new([Text.Encoding]::UTF8.GetBytes($p),$s,210000,'SHA256'); 'pbkdf2-sha256$210000$'+[Convert]::ToBase64String($s)+'$'+[Convert]::ToBase64String($k.GetBytes(32))
+$p='YOUR_PASSWORD'; $s=[byte[]]::new(16); [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($s); $k=[System.Security.Cryptography.Rfc2898DeriveBytes]::new([Text.Encoding]::UTF8.GetBytes($p),$s,100000,'SHA256'); 'pbkdf2-sha256$100000$'+[Convert]::ToBase64String($s)+'$'+[Convert]::ToBase64String($k.GetBytes(32))
 ```
 
 ```bash
 # macOS / Linux (node) — replace YOUR_PASSWORD
-node -e 'const c=require("crypto");const s=c.randomBytes(16);const k=c.pbkdf2Sync("YOUR_PASSWORD",s,210000,32,"sha256");console.log("pbkdf2-sha256$210000$"+s.toString("base64")+"$"+k.toString("base64"))'
+node -e 'const c=require("crypto");const s=c.randomBytes(16);const k=c.pbkdf2Sync("YOUR_PASSWORD",s,100000,32,"sha256");console.log("pbkdf2-sha256$100000$"+s.toString("base64")+"$"+k.toString("base64"))'
 ```
 
 > Secrets can be set after the first deploy too; the Worker just needs to exist.

@@ -47,9 +47,6 @@ export function PageShell({ children }: { children: ReactNode }) {
             >
               ⌕
             </Link>
-            <Link className="admin-link" href="/admin">
-              دخول البلدية
-            </Link>
           </div>
 
           <details className="mobile-nav">
@@ -60,7 +57,6 @@ export function PageShell({ children }: { children: ReactNode }) {
                   {label}
                 </Link>
               ))}
-              <Link href="/admin">دخول البلدية</Link>
             </nav>
           </details>
         </div>
