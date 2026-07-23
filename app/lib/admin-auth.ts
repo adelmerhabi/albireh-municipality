@@ -9,8 +9,6 @@ export type AdminIdentity = {
 };
 
 export const ADMIN_COOKIE = "bireh_admin_session";
-const TEMPORARY_SESSION_SECRET =
-  "AzpnbJyFuE1CtPMCQN31-0vHnHUfR1CHzT37uBt6cKU";
 
 type SessionPayload = {
   username: string;
@@ -86,7 +84,10 @@ async function verifySessionToken(token: string): Promise<SessionPayload | null>
 
 async function sign(value: string) {
   const runtimeEnv = env as unknown as Record<string, string | undefined>;
-  const secret = runtimeEnv.ADMIN_SESSION_SECRET || TEMPORARY_SESSION_SECRET;
+  // No baked-in fallback: the session secret must be provided via the
+  // ADMIN_SESSION_SECRET binding. If it is absent, signing fails closed and
+  // sessions cannot be issued or verified.
+  const secret = runtimeEnv.ADMIN_SESSION_SECRET;
   if (!secret) return "";
 
   const key = await crypto.subtle.importKey(

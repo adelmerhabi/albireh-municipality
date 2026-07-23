@@ -9,9 +9,6 @@ import {
 } from "../../../lib/admin-auth";
 import { verifyPassword } from "../../../lib/passwords";
 
-const TEMPORARY_BOOTSTRAP_PASSWORD_SHA256 =
-  "e490d71d51209b844c73a977b00eac70c8d52656d12433e290e177921c382411";
-
 export async function POST(request: Request) {
   const form = await request.formData();
   const username = String(form.get("username") || "")
@@ -58,11 +55,7 @@ export async function POST(request: Request) {
 
   const primaryPasswordIsValid =
     Boolean(passwordHash) && (await verifyPassword(password, passwordHash));
-  const recoveryPasswordIsValid =
-    !primaryPasswordIsValid &&
-    bootstrapUsername === username &&
-    (await verifyTemporaryBootstrapPassword(password));
-  const valid = active && (primaryPasswordIsValid || recoveryPasswordIsValid);
+  const valid = active && primaryPasswordIsValid;
   if (!valid) {
     return Response.redirect(
       new URL(
@@ -92,26 +85,4 @@ export async function POST(request: Request) {
 
 function safeReturnPath(value: string) {
   return value.startsWith("/") && !value.startsWith("//") ? value : "/admin";
-}
-
-async function verifyTemporaryBootstrapPassword(password: string) {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(password),
-  );
-  const actual = Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
-
-  if (actual.length !== TEMPORARY_BOOTSTRAP_PASSWORD_SHA256.length) {
-    return false;
-  }
-
-  let result = 0;
-  for (let index = 0; index < actual.length; index += 1) {
-    result |=
-      actual.charCodeAt(index) ^
-      TEMPORARY_BOOTSTRAP_PASSWORD_SHA256.charCodeAt(index);
-  }
-  return result === 0;
 }
