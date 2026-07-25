@@ -135,6 +135,9 @@ function withSecurityHeaders(response: Response, privateResponse: boolean) {
       "frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
     );
   }
+  if (!headers.has("strict-transport-security")) {
+    headers.set("strict-transport-security", "max-age=15552000");
+  }
   if (privateResponse) {
     headers.set("cache-control", "private, no-store");
   }
