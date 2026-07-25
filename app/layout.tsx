@@ -23,8 +23,9 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "الموقع الرسمي لبلدية البيرة – عكار: أخبار، إعلانات، مشاريع، فعاليات ووثائق البلدية.",
     icons: {
-      icon: "/municipality-source.jpg",
-      shortcut: "/municipality-source.jpg",
+      icon: "/favicon.svg",
+      shortcut: "/favicon.svg",
+      apple: "/favicon.svg",
     },
     openGraph: {
       title: "بلدية البيرة – عكار",

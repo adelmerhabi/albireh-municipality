@@ -1421,7 +1421,7 @@ function contentTypeGuide(type: ContentFormType) {
 function requestKindLabel(kind: string) {
   if (kind === "complaint") return "شكوى أو مشكلة";
   if (kind === "suggestion") return "اقتراح أو ملاحظة";
-  if (kind === "document") return "طلب معاملة";
+  if (kind === "document") return "استفسار عن معاملة";
   return "طلب من البلدية";
 }
 
