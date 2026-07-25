@@ -3,10 +3,51 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
+type Kind = "complaint" | "request" | "suggestion";
+
+const kindConfig: Record<
+  Kind,
+  {
+    guidance: string;
+    messageLabel: string;
+    messagePlaceholder: string;
+    showLocation: boolean;
+    showPhotos: boolean;
+  }
+> = {
+  complaint: {
+    guidance:
+      "الشكاوى والمشاكل: حدّد المكان وأرفق صورة إن أمكن لتصل المعالجة أسرع.",
+    messageLabel: "اشرح المشكلة",
+    messagePlaceholder:
+      "أين المشكلة وما تفاصيلها؟ كلما زادت التفاصيل أسرعت المعالجة…",
+    showLocation: true,
+    showPhotos: true,
+  },
+  request: {
+    guidance:
+      "الطلبات: وضّح ما تحتاجه من البلدية، ومكانه إن كان مرتبطاً بموقع محدّد.",
+    messageLabel: "اشرح طلبك",
+    messagePlaceholder: "ما الخدمة أو الإجراء الذي تطلبه من البلدية؟…",
+    showLocation: true,
+    showPhotos: false,
+  },
+  suggestion: {
+    guidance: "الاقتراحات: شاركنا فكرتك بوضوح، وسنطّلع عليها ونأخذها بعين الاعتبار.",
+    messageLabel: "اكتب اقتراحك",
+    messagePlaceholder: "فكرتك أو ملاحظتك لتحسين البلدة وخدماتها…",
+    showLocation: false,
+    showPhotos: false,
+  },
+};
+
 export function ResidentRequestForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [referenceCode, setReferenceCode] = useState("");
+  const [kind, setKind] = useState<Kind>("complaint");
+
+  const config = kindConfig[kind];
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,6 +82,7 @@ export function ResidentRequestForm() {
 
       setReferenceCode(result.referenceCode);
       form.reset();
+      setKind("complaint");
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -61,6 +103,8 @@ export function ResidentRequestForm() {
             className="form-control"
             id="request-kind"
             name="kind"
+            value={kind}
+            onChange={(event) => setKind(event.target.value as Kind)}
             required
           >
             <option value="complaint">شكوى أو مشكلة</option>
@@ -68,27 +112,33 @@ export function ResidentRequestForm() {
             <option value="suggestion">اقتراح أو ملاحظة</option>
           </select>
         </div>
-        <div className="field">
-          <label htmlFor="request-location">المكان</label>
-          <input
-            className="form-control"
-            id="request-location"
-            name="location"
-            maxLength={180}
-            placeholder="مثلاً: الطريق قرب المدرسة"
-          />
-        </div>
+        {config.showLocation ? (
+          <div className="field">
+            <label htmlFor="request-location">
+              المكان {kind === "request" ? "(اختياري)" : ""}
+            </label>
+            <input
+              className="form-control"
+              id="request-location"
+              name="location"
+              maxLength={180}
+              placeholder="مثلاً: الطريق قرب المدرسة"
+            />
+          </div>
+        ) : null}
       </div>
 
+      <p className="request-kind-note">{config.guidance}</p>
+
       <div className="field">
-        <label htmlFor="request-message">اشرح المشكلة أو الطلب</label>
+        <label htmlFor="request-message">{config.messageLabel}</label>
         <textarea
           className="form-control"
           id="request-message"
           name="message"
           minLength={10}
           maxLength={4000}
-          placeholder="اكتب التفاصيل التي تساعد البلدية على فهم الموضوع..."
+          placeholder={config.messagePlaceholder}
           required
         />
       </div>
@@ -118,21 +168,23 @@ export function ResidentRequestForm() {
         </div>
       </div>
 
-      <div className="field">
-        <label htmlFor="request-photos">صور للمشكلة (حتى 3 صور)</label>
-        <input
-          className="form-control"
-          id="request-photos"
-          name="photos"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
-        />
-        <small className="field-help">
-          يمكن تصوير حفرة، عطل إنارة، نفايات أو أي مشكلة تساعد الصورة على
-          توضيحها. الحد الأقصى 8 MB لكل صورة.
-        </small>
-      </div>
+      {config.showPhotos ? (
+        <div className="field">
+          <label htmlFor="request-photos">صور للمشكلة (حتى 3 صور)</label>
+          <input
+            className="form-control"
+            id="request-photos"
+            name="photos"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+          />
+          <small className="field-help">
+            يمكن تصوير حفرة، عطل إنارة، نفايات أو أي مشكلة تساعد الصورة على
+            توضيحها. الحد الأقصى 8 MB لكل صورة.
+          </small>
+        </div>
+      ) : null}
 
       <div className="honeypot-field" aria-hidden="true">
         <label htmlFor="request-website">اترك هذا الحقل فارغاً</label>

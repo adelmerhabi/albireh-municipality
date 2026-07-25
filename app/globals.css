@@ -3337,3 +3337,15 @@ textarea.form-control {
   min-width: 60px;
   text-align: center;
 }
+
+/* Dynamic guidance note on the resident request form */
+.request-kind-note {
+  margin: -2px 0 16px;
+  padding: 10px 14px;
+  background: var(--green-50);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--green-950);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
