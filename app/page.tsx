@@ -48,31 +48,31 @@ export default async function Home() {
   return (
     <PageShell>
       <section className="home-hero">
-        <img
+        <video
           className="home-hero__bg"
-          src="/village/masjid-saray.jpg"
-          alt="منظر من بلدة البيرة يظهر المسجد والسرايا"
-        />
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster="/village/masjid-saray.jpg"
+        >
+          <source src="/village/video6.mp4" type="video/mp4" />
+        </video>
         <div className="container home-hero__inner">
           <p className="eyebrow eyebrow--light">
-            الموقع الرسمي — بلدية البيرة، عكار
+            بلدية البيرة – عكار · الموقع الرسمي
           </p>
           <h1 className="home-hero__title">معاً… نبني ونزدهر</h1>
           <p className="home-hero__lead">
-            بوابتكم إلى أخبار البلدة وخدماتها: الإعلانات، المشاريع، الفعاليات
-            وحملات المساعدة — وقناةٌ مباشرة لإرسال طلبٍ أو شكوى للبلدية.
+            بوابتكم إلى خدمات البلدة وأخبارها ومشاريعها، وقناةٌ مباشرة لإرسال
+            طلبٍ أو شكوى للبلدية.
           </p>
-          <div className="home-hero__values">
-            <span>الشفافية</span>
-            <span>التنمية</span>
-            <span>المشاركة</span>
-          </div>
           <div className="hero__actions">
             <Link className="button button--primary" href="/announcements">
-              آخر الإعلانات
+              آخر الأخبار
             </Link>
             <Link className="button button--outline-light" href="/requests">
-              أرسل طلباً أو شكوى
+              الخدمات والطلبات
             </Link>
           </div>
         </div>
