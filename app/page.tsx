@@ -1,32 +1,99 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ContentCard } from "./components/ContentCard";
 import { PageShell } from "./components/PageShell";
 import { getPublishedContent } from "./lib/content";
 
-const quickLinks = [
+type Service = {
+  href: string;
+  title: string;
+  desc: string;
+  icon: ReactNode;
+};
+
+const services: Service[] = [
   {
-    href: "/announcements",
-    kicker: "ما يجب معرفته اليوم",
-    title: "الإعلانات",
-    mark: "إ",
-  },
-  {
-    href: "/events",
-    kicker: "مواعيد ومناسبات",
-    title: "الفعاليات",
-    mark: "ف",
-  },
-  {
-    href: "/projects",
-    kicker: "متابعة التنفيذ",
-    title: "مشاريع البلدية",
-    mark: "م",
+    href: "/services/documents",
+    title: "طلب معاملة",
+    desc: "إخراج قيد، إفادة سكن، تصديق…",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+        <path d="M14 3v6h6M8 13h8M8 17h5" />
+      </svg>
+    ),
   },
   {
     href: "/requests",
-    kicker: "شكوى، طلب أو اقتراح",
-    title: "أرسل للبلدية",
-    mark: "ط",
+    title: "شكوى أو طلب",
+    desc: "أبلغ عن مشكلة أو قدّم اقتراحاً",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        <path d="M12 7v4M12 14h.01" />
+      </svg>
+    ),
+  },
+  {
+    href: "/announcements",
+    title: "الأخبار والإعلانات",
+    desc: "آخر ما تنشره البلدية",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 11l18-5v12L3 14zM11.6 16.8a3 3 0 0 1-5.8-1.6" />
+      </svg>
+    ),
+  },
+  {
+    href: "/projects",
+    title: "مشاريع البلدية",
+    desc: "متابعة التنفيذ والإنجاز",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" />
+      </svg>
+    ),
+  },
+  {
+    href: "/events",
+    title: "الفعاليات",
+    desc: "مواعيد ومناسبات البلدة",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+      </svg>
+    ),
+  },
+  {
+    href: "/donations",
+    title: "الحملات والمساعدات",
+    desc: "ادعم أهل البلدة",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.5 1-1a5.5 5.5 0 0 0 0-7.9z" />
+      </svg>
+    ),
+  },
+  {
+    href: "/about",
+    title: "عن البيرة",
+    desc: "تاريخها ومعالمها وطبيعتها",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 21h18M5 21V10l7-6 7 6v11M10 21v-5h4v5" />
+      </svg>
+    ),
+  },
+  {
+    href: "/contact",
+    title: "تواصل ودليل",
+    desc: "أرقام البلدية والطوارئ",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" />
+      </svg>
+    ),
   },
 ];
 
@@ -94,23 +161,21 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="quick-access" aria-labelledby="quick-title">
+      <section className="services" aria-labelledby="services-title">
         <div className="container">
           <div className="section-heading section-heading--compact">
             <div>
-              <p className="eyebrow">وصول سريع</p>
-              <h2 id="quick-title">شو عم تدوّر عليه؟</h2>
+              <p className="eyebrow">خدمات البلدية</p>
+              <h2 id="services-title">كل ما تحتاجه من البلدية</h2>
             </div>
           </div>
-          <div className="quick-grid">
-            {quickLinks.map((item) => (
-              <Link className="quick-card" href={item.href} key={item.href}>
-                <span className="quick-card__mark">{item.mark}</span>
-                <span>
-                  <small>{item.kicker}</small>
-                  <strong>{item.title}</strong>
-                </span>
-                <span className="quick-card__arrow" aria-hidden="true">
+          <div className="service-grid">
+            {services.map((item) => (
+              <Link className="service-card" href={item.href} key={item.href}>
+                <span className="service-card__icon">{item.icon}</span>
+                <strong>{item.title}</strong>
+                <small>{item.desc}</small>
+                <span className="service-card__arrow" aria-hidden="true">
                   ←
                 </span>
               </Link>

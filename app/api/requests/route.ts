@@ -9,7 +9,12 @@ import {
   residentRequests,
 } from "../../../db/schema";
 
-const allowedKinds = new Set(["complaint", "request", "suggestion"]);
+const allowedKinds = new Set([
+  "complaint",
+  "request",
+  "suggestion",
+  "document",
+]);
 const allowedImageTypes = new Set([
   "image/jpeg",
   "image/png",

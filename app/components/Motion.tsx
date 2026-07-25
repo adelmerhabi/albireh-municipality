@@ -7,6 +7,7 @@ import { useEffect } from "react";
 const SELECTORS = [
   ".section-heading",
   ".content-card",
+  ".service-card",
   ".quick-card",
   ".project-row",
   ".value-card",
