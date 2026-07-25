@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { MobileNav } from "./MobileNav";
 import { Motion } from "./Motion";
 
 const navigation = [
@@ -49,16 +50,7 @@ export function PageShell({ children }: { children: ReactNode }) {
             </Link>
           </div>
 
-          <details className="mobile-nav">
-            <summary aria-label="فتح القائمة">القائمة</summary>
-            <nav className="mobile-nav__panel" aria-label="قائمة الهاتف">
-              {navigation.map(([label, href]) => (
-                <Link href={href} key={href}>
-                  {label}
-                </Link>
-              ))}
-            </nav>
-          </details>
+          <MobileNav items={navigation} />
         </div>
       </header>
 
