@@ -41,41 +41,33 @@ export default async function Home() {
 
   return (
     <PageShell>
-      <section className="hero">
-        <div className="hero__wash" />
-        <div className="container hero__grid">
-          <div className="hero__content">
-            <p className="eyebrow">الموقع الرسمي لبلدية البيرة – عكار</p>
-            <h1>
-              إعلانات الضيعة وخدماتها،
-              <span> من مصدر رسمي واحد.</span>
-            </h1>
-            <p className="hero__lead">
-              مساحة واضحة وسريعة لمتابعة الإعلانات، المشاريع، الفعاليات
-              وحملات المساعدة، مع قناة خاصة لإرسال طلب أو شكوى للبلدية.
-            </p>
-            <div className="hero__actions">
-              <Link className="button button--primary" href="/announcements">
-                آخر الإعلانات
-              </Link>
-              <Link className="button button--ghost" href="/requests">
-                أرسل طلباً أو شكوى
-              </Link>
-            </div>
-            <p className="hero__note">
-              نسخة قيد الإعداد — المحتوى الظاهر حالياً تجريبي إلى حين اعتماده
-              من البلدية.
-            </p>
+      <section className="home-hero">
+        <img
+          className="home-hero__bg"
+          src="/village/masjid-saray.jpg"
+          alt="منظر من بلدة البيرة يظهر المسجد والسرايا"
+        />
+        <div className="container home-hero__inner">
+          <p className="eyebrow eyebrow--light">
+            الموقع الرسمي — بلدية البيرة، عكار
+          </p>
+          <h1 className="home-hero__title">معاً… نبني ونزدهر</h1>
+          <p className="home-hero__lead">
+            بوابتكم إلى أخبار البلدة وخدماتها: الإعلانات، المشاريع، الفعاليات
+            وحملات المساعدة — وقناةٌ مباشرة لإرسال طلبٍ أو شكوى للبلدية.
+          </p>
+          <div className="home-hero__values">
+            <span>الشفافية</span>
+            <span>التنمية</span>
+            <span>المشاركة</span>
           </div>
-
-          <div className="hero__municipality-card" aria-label="هوية بلدية البيرة">
-            <div className="cedar-crop cedar-crop--large">
-              <img src="/municipality-source.jpg" alt="" />
-            </div>
-            <p>بلدية البيرة – عكار</p>
-            <strong>البيرة تجمعنا</strong>
-            <div className="hero__card-line" />
-            <span>خدمة محلية • تواصل مباشر • معلومات موثوقة</span>
+          <div className="hero__actions">
+            <Link className="button button--primary" href="/announcements">
+              آخر الإعلانات
+            </Link>
+            <Link className="button button--outline-light" href="/requests">
+              أرسل طلباً أو شكوى
+            </Link>
           </div>
         </div>
       </section>

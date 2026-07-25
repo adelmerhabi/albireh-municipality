@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Motion } from "./Motion";
 
 const navigation = [
   ["الرئيسية", "/"],
@@ -15,6 +16,7 @@ const navigation = [
 export function PageShell({ children }: { children: ReactNode }) {
   return (
     <div className="site-shell">
+      <Motion />
       <div className="prototype-bar">
         نسخة أولية خاصة للمراجعة — ليست الموقع الرسمي المنشور بعد
       </div>
