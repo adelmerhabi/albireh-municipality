@@ -78,6 +78,14 @@ export const adminUsers = sqliteTable("admin_users", {
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const adminLoginAttempts = sqliteTable("admin_login_attempts", {
+  key: text("key").primaryKey(),
+  failedAttempts: integer("failed_attempts").notNull().default(0),
+  windowStartedAt: text("window_started_at").notNull(),
+  lockedUntil: text("locked_until"),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const residentRequests = sqliteTable("resident_requests", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   referenceCode: text("reference_code").notNull().unique(),

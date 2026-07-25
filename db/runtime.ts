@@ -86,6 +86,15 @@ async function runRuntimeSchema() {
       )
     `),
     env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS admin_login_attempts (
+        key TEXT PRIMARY KEY,
+        failed_attempts INTEGER NOT NULL DEFAULT 0,
+        window_started_at TEXT NOT NULL,
+        locked_until TEXT,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `),
+    env.DB.prepare(`
       CREATE TABLE IF NOT EXISTS content_attachments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         content_id INTEGER NOT NULL,
@@ -143,6 +152,9 @@ async function runRuntimeSchema() {
     ),
     env.DB.prepare(
       "CREATE INDEX IF NOT EXISTS request_attachments_request_idx ON request_attachments (request_id, position)",
+    ),
+    env.DB.prepare(
+      "CREATE INDEX IF NOT EXISTS admin_login_attempts_updated_idx ON admin_login_attempts (updated_at)",
     ),
   ]);
 

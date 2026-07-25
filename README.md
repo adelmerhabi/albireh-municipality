@@ -1,98 +1,143 @@
-# vinext-starter
+# موقع بلدية البيرة – عكار
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+المصدر البرمجي للموقع الرسمي لبلدية البيرة في عكار، لبنان. الموقع عربي
+باتجاه من اليمين إلى اليسار، متجاوب مع الهاتف، ويجمع الأخبار والإعلانات
+والفعاليات والمشاريع وحملات المساعدة والخدمات في مكان واحد.
 
-## Prerequisites
+الرابط الحالي: [baladiya.albireh.workers.dev](https://baladiya.albireh.workers.dev)
+
+## ما الذي يقدمه الموقع؟
+
+- موقع عام لا يتطلب حساباً من السكان والزوار.
+- لوحة عربية محمية لموظفي البلدية.
+- إنشاء وتعديل ونشر وأرشفة الإعلانات والفعاليات والمشاريع وحملات المساعدة.
+- حقول مخصصة حسب نوع المحتوى، بما فيها معلومات Wish Money للحملات.
+- صور وملفات متعددة وصفحات تفاصيل ومعرض صور.
+- طلبات وشكاوى خاصة مع رقم متابعة ومرفقات اختيارية.
+- طلب أولي للاستفسار عن المعاملات، مع تأكيد البلدية للصلاحية والمتطلبات.
+- إدارة معلومات الهاتف والبريد والدوام والخريطة من داخل لوحة الموظف.
+- حساب استعادة مستقل وحساب موظف قابل للتفعيل والتعطيل وتغيير كلمة مروره.
+- بحث، صفحات فهرسة، `sitemap.xml` و`robots.txt`.
+- سجل تدقيق للإجراءات الإدارية.
+
+## البنية التقنية
+
+التطبيق مبني بـ React وNext.js-compatible [vinext](https://github.com/cloudflare/vinext)
+ويُنشر كـ Cloudflare Worker واحد:
+
+- **D1 / Drizzle ORM:** المحتوى، المستخدمون الإداريون، طلبات السكان وسجل التدقيق.
+- **R2:** الصور والملفات المرفوعة.
+- **Worker:** الموقع العام، لوحة الإدارة، API، وتقديم الوسائط.
+
+لا يحتوي المستودع على بيانات الإنتاج أو الملفات المرفوعة؛ تبقى هذه داخل حساب
+Cloudflare الخاص بالبلدية.
+
+## التشغيل محلياً
+
+المتطلبات:
 
 - Node.js `>=22.13.0`
-
-## Quick Start
+- npm (ملف القفل المعتمد هو `package-lock.json`)
 
 ```bash
-npm install
+npm ci
 npm run dev
+```
+
+يفتح خادم التطوير العنوان الذي يظهر في الطرفية. يستخدم التطوير المحلي موارد
+Cloudflare/Miniflare المعرفة في `vite.config.ts`.
+
+## الأوامر
+
+```bash
+npm run dev         # خادم التطوير
+npm run lint        # ESLint
+npm test            # اختبارات المنطق والمسارات العامة (لا يعيد البناء)
+npm run build       # بناء نسخة الإنتاج
+npm run db:generate # توليد migration بعد تعديل db/schema.ts
+```
+
+نفّذ الفحص الكامل قبل رفع أي تغيير:
+
+```bash
+npm run lint
+npm test
 npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+تنفّذ GitHub Actions الخطوات نفسها آلياً لكل Pull Request ولكل رفع إلى
+`main`.
 
-## Included Shape
+## إعداد قاعدة البيانات والتخزين
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+تُعرّف روابط Cloudflare بالأسماء التالية:
 
-## Workspace Auth Headers
+| Binding | الاستخدام |
+| --- | --- |
+| `DB` | قاعدة D1 |
+| `MEDIA` | حاوية R2 |
 
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
+ويقرأ البناء المتغيرات التالية:
 
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
+- `CF_D1_DATABASE_ID`
+- `CF_D1_DATABASE_NAME`
+- `CF_R2_BUCKET_NAME`
 
-Treat the full name as optional and fall back to email when it is absent:
+ملفات migrations موجودة في `drizzle/`. عند تغيير `db/schema.ts` يجب توليد
+migration ومراجعته وإضافته إلى Git. تُطبق السلسلة كاملة على قاعدة جديدة قبل
+أول طلب. أما قاعدة إنتاج سبق أن أنشأها `db/runtime.ts` من دون سجل migrations
+فلا تُطبق عليها السلسلة القديمة عشوائياً؛ راجع تعليمات الترقية في
+`DEPLOY.md` وخذ نسخة احتياطية أولاً.
 
-```tsx
-import { headers } from "next/headers";
+## أسرار الإنتاج
 
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
+لا تضف أي سر إلى Git أو إلى ملف يتم رفعه. إعدادات الدخول المطلوبة في
+Cloudflare هي:
 
-  const displayName = fullName ?? email;
-  // ...
-}
+- `ADMIN_SESSION_SECRET`
+- `ADMIN_BOOTSTRAP_USERNAME`
+- `ADMIN_BOOTSTRAP_PASSWORD_HASH`
+- `ADMIN_BOOTSTRAP_DISPLAY_NAME`
+
+تفاصيل إنشاء الموارد، توليد القيم، النسخ الاحتياطي والنشر موجودة في
+[DEPLOY.md](./DEPLOY.md).
+
+## الخصوصية والأمان
+
+طلبات السكان ومرفقاتها خاصة ولا يجوز تقديمها عبر روابط الوسائط العامة. تظهر
+سياسة الجمع والاستخدام والحفظ للسكان في `/privacy`. على مسؤول البلدية تنفيذ
+مراجعة الحذف والنسخ الاحتياطي وفق المدد المذكورة فيها.
+
+اقرأ [SECURITY.md](./SECURITY.md) قبل الإبلاغ عن ثغرة أو التعامل مع سر
+مكشوف. لا تضع بيانات سكان حقيقية في الاختبارات أو Issues أو Pull Requests.
+
+## هيكل المستودع
+
+```text
+app/       الصفحات والمكونات وواجهات API
+db/        مخطط Drizzle وتهيئة D1 وقت التشغيل
+drizzle/   migrations قاعدة البيانات
+public/    الصور والملفات الثابتة العامة فقط
+tests/     اختبارات Node
+worker/    مدخل Cloudflare Worker
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+## طريقة العمل
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+1. أنشئ فرعاً قصير الاسم للتغيير.
+2. لا تعدّل migration مطبقاً؛ أضف migration جديداً.
+3. شغّل lint والاختبارات والبناء.
+4. افتح Pull Request واشرح أثر التغيير على البيانات أو الأسرار أو النشر.
+5. لا تنشر إلى الإنتاج قبل أخذ نسخة احتياطية عند وجود تغيير في المخطط.
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+## قبل الإطلاق الرسمي
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+- إدخال رقم الهاتف والبريد والعنوان والدوام المعتمد من تبويب «معلومات التواصل».
+- اعتماد أنواع المعاملات التي تستقبل البلدية طلباً أولياً بشأنها.
+- اعتماد مالك كل رقم Wish وصياغة كل حملة قبل نشرها.
+- التأكد من حقوق نشر الصور والفيديو.
+- اختبار حسابي الإدارة والاستعادة والنسخ الاحتياطي.
+- اعتماد سياسة الخصوصية ومدة الاحتفاظ من البلدية.
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+المحتوى التجريبي غير ظاهر افتراضياً. يمكن إظهاره محلياً فقط بإضافة
+`ENABLE_SAMPLE_CONTENT=true`، ولا ينبغي تفعيل هذا المتغير في الإنتاج.

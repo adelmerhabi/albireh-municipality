@@ -78,7 +78,7 @@ export function PageShell({ children }: { children: ReactNode }) {
             </Link>
             <p>
               الموقع الرسمي لمتابعة أخبار البلدية وإعلاناتها ومشاريعها
-              وخدماتها. تُحدّث معلومات التواصل بعد اعتمادها من البلدية.
+              وخدماتها. تُدار معلومات التواصل والمحتوى مباشرةً من البلدية.
             </p>
           </div>
           <div>
@@ -108,14 +108,16 @@ export function PageShell({ children }: { children: ReactNode }) {
                 <Link href="/contact">أرقام البلدية</Link>
               </li>
               <li>
-                <Link href="/contact">صفحة Facebook الرسمية</Link>
+                <Link href="/contact">قنوات التواصل المعتمدة</Link>
               </li>
             </ul>
           </div>
         </div>
         <div className="container site-footer__bottom">
           <span>© 2026 بلدية البيرة – عكار</span>
-          <span>المحتوى التجريبي سيُستبدل قبل الإطلاق العام.</span>
+          <span>
+            <Link href="/privacy">سياسة الخصوصية وحفظ البيانات</Link>
+          </span>
         </div>
       </footer>
     </div>

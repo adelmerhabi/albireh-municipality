@@ -1,4 +1,5 @@
-import { and, count, desc, eq, inArray } from "drizzle-orm";
+import { env } from "cloudflare:workers";
+import { and, count, desc, eq, inArray, like, or } from "drizzle-orm";
 import { getDb } from "../../db";
 import { ensureRuntimeSchema } from "../../db/runtime";
 import {
@@ -6,6 +7,7 @@ import {
   contentAttachments,
   contentItems,
 } from "../../db/schema";
+import type { AdminContentInput } from "./admin-content-input";
 
 export type ContentType =
   | "news"
@@ -64,8 +66,16 @@ export type UploadedAttachment = {
   altText?: string;
 };
 
-type ContentRow = typeof contentItems.$inferSelect;
+export type ContentRow = typeof contentItems.$inferSelect;
 type AttachmentRow = typeof contentAttachments.$inferSelect;
+
+export type AdminContentAttachment = AttachmentRow & {
+  url: string;
+};
+
+export type AdminContentDetails = ContentRow & {
+  attachments: AdminContentAttachment[];
+};
 
 const typeInfo: Record<
   ContentType,
@@ -299,10 +309,55 @@ export async function getPublishedContent({
     // The preview remains useful before its D1 binding is provisioned.
   }
 
-  return sampleRows
-    .filter((row) => !type || row.type === type)
-    .slice(0, limit)
-    .map((row) => toPublicContent(row));
+  return sampleContentEnabled()
+    ? sampleRows
+        .filter((row) => !type || row.type === type)
+        .slice(0, limit)
+        .map((row) => toPublicContent(row))
+    : [];
+}
+
+export async function searchPublishedContent(
+  query: string,
+  limit = 50,
+): Promise<PublicContent[]> {
+  const normalized = query.trim().slice(0, 120);
+  if (!normalized) return [];
+  const safeLimit = Math.min(100, Math.max(1, Math.floor(limit) || 50));
+
+  try {
+    await ensureRuntimeSchema();
+    const pattern = `%${normalized}%`;
+    const rows = await getDb()
+      .select()
+      .from(contentItems)
+      .where(
+        and(
+          eq(contentItems.status, "published"),
+          or(
+            like(contentItems.title, pattern),
+            like(contentItems.excerpt, pattern),
+            like(contentItems.body, pattern),
+            like(contentItems.category, pattern),
+            like(contentItems.location, pattern),
+          ),
+        ),
+      )
+      .orderBy(desc(contentItems.featured), desc(contentItems.publishedAt))
+      .limit(safeLimit);
+    return rows.map((row) => toPublicContent(row));
+  } catch {
+    if (!sampleContentEnabled()) return [];
+    const lowered = normalized.toLocaleLowerCase("ar");
+    return sampleRows
+      .filter((row) =>
+        [row.title, row.excerpt, row.body, row.category, row.location].some(
+          (value) => value?.toLocaleLowerCase("ar").includes(lowered),
+        ),
+      )
+      .slice(0, safeLimit)
+      .map((row) => toPublicContent(row));
+  }
 }
 
 export type GalleryImage = {
@@ -414,7 +469,9 @@ export async function getPublishedContentPage({
     // Fall back to sample content while the database is being provisioned.
   }
 
-  const sampleItems = sampleRows.filter((row) => !type || row.type === type);
+  const sampleItems = sampleContentEnabled()
+    ? sampleRows.filter((row) => !type || row.type === type)
+    : [];
   const total = sampleItems.length;
   const start = (safePage - 1) * pageSize;
   return {
@@ -454,6 +511,33 @@ export async function getAdminContent(): Promise<ContentRow[]> {
   } catch {
     return [];
   }
+}
+
+export async function getAdminContentById(
+  id: number,
+): Promise<AdminContentDetails | null> {
+  await ensureRuntimeSchema();
+  const db = getDb();
+  const [item] = await db
+    .select()
+    .from(contentItems)
+    .where(eq(contentItems.id, id))
+    .limit(1);
+  if (!item) return null;
+
+  const attachments = await db
+    .select()
+    .from(contentAttachments)
+    .where(eq(contentAttachments.contentId, id))
+    .orderBy(contentAttachments.position);
+
+  return {
+    ...item,
+    attachments: attachments.map((attachment) => ({
+      ...attachment,
+      url: `/media/${encodeURIComponent(attachment.mediaKey)}`,
+    })),
+  };
 }
 
 export async function createContent(
@@ -527,6 +611,110 @@ export async function archiveContent(id: number, actorEmail: string) {
   return setContentStatus(id, "archived", actorEmail);
 }
 
+export async function updateContent(
+  id: number,
+  input: AdminContentInput,
+  retainedAttachmentIds: number[],
+  actorEmail: string,
+) {
+  await ensureRuntimeSchema();
+  const db = getDb();
+  const existing = await getAdminContentById(id);
+  if (!existing) return null;
+
+  const retainedIdSet = new Set(retainedAttachmentIds);
+  const retained = existing.attachments.filter((attachment) =>
+    retainedIdSet.has(attachment.id),
+  );
+  const combinedAttachments = [
+    ...retained.map((attachment) => ({
+      key: attachment.mediaKey,
+      filename: attachment.filename,
+      mimeType: attachment.mimeType,
+      kind: attachment.kind === "image" ? ("image" as const) : ("file" as const),
+      altText: attachment.altText || undefined,
+    })),
+    ...input.attachments,
+  ].slice(0, 12);
+  const firstImage = combinedAttachments.find(
+    (attachment) => attachment.kind === "image",
+  );
+  const firstFile = combinedAttachments.find(
+    (attachment) => attachment.kind === "file",
+  );
+  const preservesLegacyMedia =
+    existing.attachments.length === 0 && input.attachments.length === 0;
+  const coverKey =
+    firstImage?.key || (preservesLegacyMedia ? existing.coverKey : null);
+  const attachmentKey =
+    firstFile?.key || (preservesLegacyMedia ? existing.attachmentKey : null);
+  const now = new Date().toISOString();
+
+  const [item] = await db
+    .update(contentItems)
+    .set({
+      type: input.type,
+      title: input.title,
+      excerpt: input.excerpt,
+      body: input.body,
+      status: input.status,
+      category: input.category ?? null,
+      location: input.location ?? null,
+      coverKey,
+      coverAlt:
+        input.coverAlt ||
+        firstImage?.altText ||
+        (coverKey === existing.coverKey ? existing.coverAlt : null),
+      attachmentKey,
+      wishNumber: input.type === "donation" ? input.wishNumber ?? null : null,
+      wishRecipient:
+        input.type === "donation" ? input.wishRecipient ?? null : null,
+      donationTarget:
+        input.type === "donation" ? input.donationTarget ?? null : null,
+      startsAt: input.startsAt ?? null,
+      endsAt: input.endsAt ?? null,
+      publishedAt:
+        input.status === "published"
+          ? existing.publishedAt || now
+          : existing.publishedAt,
+      updatedAt: now,
+    })
+    .where(eq(contentItems.id, id))
+    .returning();
+  if (!item) return null;
+
+  await db
+    .delete(contentAttachments)
+    .where(eq(contentAttachments.contentId, id));
+  if (combinedAttachments.length > 0) {
+    await db.insert(contentAttachments).values(
+      combinedAttachments.map((attachment, position) => ({
+        contentId: id,
+        mediaKey: attachment.key,
+        filename: attachment.filename,
+        mimeType: attachment.mimeType,
+        kind: attachment.kind,
+        altText: attachment.altText || null,
+        position,
+      })),
+    );
+  }
+
+  await db.insert(auditLog).values({
+    action: "update",
+    entityType: "content",
+    entityId: String(id),
+    actorEmail,
+    details: JSON.stringify({
+      title: item.title,
+      status: item.status,
+      attachments: combinedAttachments.length,
+    }),
+  });
+
+  return item;
+}
+
 export async function setContentStatus(
   id: number,
   status: "draft" | "published" | "archived",
@@ -545,13 +733,15 @@ export async function setContentStatus(
     .where(eq(contentItems.id, id))
     .returning();
 
-  await db.insert(auditLog).values({
-    action: `status:${status}`,
-    entityType: "content",
-    entityId: String(id),
-    actorEmail,
-    details: item ? JSON.stringify({ title: item.title }) : null,
-  });
+  if (item) {
+    await db.insert(auditLog).values({
+      action: `status:${status}`,
+      entityType: "content",
+      entityId: String(id),
+      actorEmail,
+      details: JSON.stringify({ title: item.title }),
+    });
+  }
 
   return item;
 }
@@ -586,6 +776,7 @@ export async function getContentBySlug(
     // Sample detail pages remain available before the database is provisioned.
   }
 
+  if (!sampleContentEnabled()) return null;
   const sample = sampleRows.find((row) => row.slug === slug);
   return sample ? toPublicContent(sample) : null;
 }
@@ -682,4 +873,9 @@ function formatDateTime(value: string | null) {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
+}
+
+function sampleContentEnabled() {
+  const runtimeEnv = env as unknown as Record<string, string | undefined>;
+  return runtimeEnv.ENABLE_SAMPLE_CONTENT === "true";
 }

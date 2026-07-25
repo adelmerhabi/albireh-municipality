@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { ContentCard } from "../components/ContentCard";
 import { PageShell } from "../components/PageShell";
-import { getPublishedContent } from "../lib/content";
+import { searchPublishedContent } from "../lib/content";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "البحث",
@@ -14,15 +16,7 @@ export default async function SearchPage({
 }) {
   const { q = "" } = await searchParams;
   const query = q.trim().toLocaleLowerCase("ar");
-  const all = await getPublishedContent();
-  const results = query
-    ? all.filter(
-        (item) =>
-          item.title.toLocaleLowerCase("ar").includes(query) ||
-          item.excerpt.toLocaleLowerCase("ar").includes(query) ||
-          item.category?.toLocaleLowerCase("ar").includes(query),
-      )
-    : [];
+  const results = query ? await searchPublishedContent(query) : [];
 
   return (
     <PageShell>

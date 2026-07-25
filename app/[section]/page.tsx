@@ -8,6 +8,8 @@ import {
   type ContentType,
 } from "../lib/content";
 
+export const dynamic = "force-dynamic";
+
 const sections: Record<
   string,
   { title: string; eyebrow: string; description: string; type: ContentType }

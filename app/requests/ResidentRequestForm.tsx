@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 export function ResidentRequestForm() {
@@ -139,10 +140,15 @@ export function ResidentRequestForm() {
       </div>
 
       <label className="consent-field">
-        <input type="checkbox" required />
+        <input
+          type="checkbox"
+          name="privacyConsent"
+          value="accepted"
+          required
+        />
         <span>
-          أفهم أن الرسالة والصور ستصل إلى موظفي البلدية فقط ولن تُنشر على
-          الموقع.
+          قرأت <Link href="/privacy">سياسة الخصوصية</Link> وأفهم أن الرسالة والصور
+          ستصل إلى موظفي البلدية فقط ولن تُنشر على الموقع.
         </span>
       </label>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 const certificateTypes = [
@@ -46,6 +47,10 @@ export function DocumentRequestForm() {
     payload.set("name", fullName);
     payload.set("phone", String(data.get("phone") || ""));
     payload.set("message", message);
+    payload.set(
+      "privacyConsent",
+      String(data.get("privacyConsent") || ""),
+    );
     for (const photo of data.getAll("photos")) {
       if (photo instanceof File && photo.size > 0) payload.append("photos", photo);
     }
@@ -78,8 +83,8 @@ export function DocumentRequestForm() {
       <div className="request-success request-success--lg">
         <strong>تم استلام طلبك بنجاح ✓</strong>
         <p>
-          احتفظ برقم المتابعة التالي، وستتواصل معك البلدية عند جهوز المعاملة
-          للاستلام:
+          احتفظ برقم المتابعة التالي. ستراجع البلدية الطلب وتتواصل معك لتأكيد
+          إمكان تقديم المعاملة والخطوات المطلوبة:
         </p>
         <div className="tracking-code">
           <bdi>{referenceCode}</bdi>
@@ -167,9 +172,15 @@ export function DocumentRequestForm() {
       </div>
 
       <label className="consent-field">
-        <input type="checkbox" required />
+        <input
+          type="checkbox"
+          name="privacyConsent"
+          value="accepted"
+          required
+        />
         <span>
-          أوافق على أن تصل بياناتي إلى موظفي البلدية لمعالجة هذا الطلب فقط.
+          قرأت <Link href="/privacy">سياسة الخصوصية</Link> وأوافق على أن تصل بياناتي
+          إلى موظفي البلدية لمعالجة هذا الطلب فقط.
         </span>
       </label>
 

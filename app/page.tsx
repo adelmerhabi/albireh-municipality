@@ -8,6 +8,8 @@ import {
 } from "./components/VillageGallery";
 import { getPublishedContent } from "./lib/content";
 
+export const dynamic = "force-dynamic";
+
 const villagePhotos: GalleryPhoto[] = [
   {
     src: "/village/masjid-saray.jpg",
@@ -39,8 +41,8 @@ type Service = {
 const services: Service[] = [
   {
     href: "/services/documents",
-    title: "طلب معاملة",
-    desc: "إخراج قيد، إفادة سكن، تصديق…",
+    title: "استفسار عن معاملة",
+    desc: "طلب أولي ومتابعة مع الموظف المختص",
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
