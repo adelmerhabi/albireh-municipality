@@ -30,6 +30,12 @@ const quickLinks = [
   },
 ];
 
+const homeValues: Array<[string, string]> = [
+  ["الشفافية", "وضوح القرارات والمعلومات أمام الأهالي."],
+  ["التنمية", "مشاريع وخدمات تنهض بالبلدة وأهلها."],
+  ["المشاركة", "قرارٌ يصنعه أهل البيرة معاً."],
+];
+
 export default async function Home() {
   const [latest, projects, events, donations] = await Promise.all([
     getPublishedContent({ limit: 3 }),
@@ -69,6 +75,22 @@ export default async function Home() {
               أرسل طلباً أو شكوى
             </Link>
           </div>
+        </div>
+      </section>
+
+      <section className="brand-band" aria-label="قيم البلدية">
+        <div className="container brand-band__grid">
+          {homeValues.map(([title, body], index) => (
+            <div className="brand-value" key={title}>
+              <span className="brand-value__num">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <strong>{title}</strong>
+                <p>{body}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -119,6 +141,31 @@ export default async function Home() {
               لا يوجد محتوى منشور حالياً. سيظهر أول خبر أو مشروع هنا فور نشره.
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="section section--paper heritage-teaser">
+        <div className="container heritage-teaser__grid">
+          <figure className="heritage-teaser__media">
+            <img
+              src="/village/masjid2.jpg"
+              alt="الرواق الداخلي لمسجد البيرة الأثري"
+              loading="lazy"
+            />
+            <figcaption>تصوير: عدنان مرعب</figcaption>
+          </figure>
+          <div className="heritage-teaser__body">
+            <p className="eyebrow">هويتنا</p>
+            <h2>البيرة… تاريخٌ من حجرٍ وذاكرة</h2>
+            <p>
+              من «بيرة الحكم» ومركزِ الدريب، إلى سرايها ومسجدها الأثري المبنيّ
+              من الحجر الأسود وأحراج بلوطها — تعرّفوا إلى قصّة البلدة وطبيعتها
+              العكاريّة الأصيلة.
+            </p>
+            <Link className="button button--primary" href="/about">
+              تعرّف على البيرة
+            </Link>
+          </div>
         </div>
       </section>
 

@@ -17,9 +17,6 @@ export function PageShell({ children }: { children: ReactNode }) {
   return (
     <div className="site-shell">
       <Motion />
-      <div className="prototype-bar">
-        نسخة أولية خاصة للمراجعة — ليست الموقع الرسمي المنشور بعد
-      </div>
       <header className="site-header">
         <div className="container site-header__inner">
           <Link className="brand" href="/" aria-label="بلدية البيرة – عكار">
