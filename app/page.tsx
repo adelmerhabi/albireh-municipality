@@ -2,7 +2,32 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ContentCard } from "./components/ContentCard";
 import { PageShell } from "./components/PageShell";
+import {
+  VillageGallery,
+  type GalleryPhoto,
+} from "./components/VillageGallery";
 import { getPublishedContent } from "./lib/content";
+
+const villagePhotos: GalleryPhoto[] = [
+  {
+    src: "/village/masjid-saray.jpg",
+    alt: "منظر جوي لمسجد البيرة وسرايها",
+    credit: "تصوير: أيمن مرعب",
+  },
+  {
+    src: "/village/saray2.jpg",
+    alt: "سرايا البيرة التاريخية",
+    credit: "تصوير: عدنان مرعب",
+  },
+  {
+    src: "/village/masjid2.jpg",
+    alt: "رواق مسجد البيرة الأثري",
+    credit: "تصوير: عدنان مرعب",
+  },
+  { src: "/village/snow2.jpg", alt: "البيرة تحت الثلج" },
+  { src: "/village/saray3.jpg", alt: "أطلال سرايا البيرة" },
+  { src: "/village/snow1.jpg", alt: "شتاء في البيرة" },
+];
 
 type Service = {
   href: string;
@@ -234,7 +259,22 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="section" aria-labelledby="projects-title">
+      <section className="section" aria-labelledby="gallery-title">
+        <div className="container">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">صور من البلدة</p>
+              <h2 id="gallery-title">معرض البيرة</h2>
+            </div>
+            <Link className="text-link" href="/about">
+              كل الصور ←
+            </Link>
+          </div>
+          <VillageGallery photos={villagePhotos} />
+        </div>
+      </section>
+
+      <section className="section section--paper" aria-labelledby="projects-title">
         <div className="container projects-layout">
           <div>
             <div className="section-heading">
