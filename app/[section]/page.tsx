@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ContentCard } from "../components/ContentCard";
 import { PageShell } from "../components/PageShell";
 import {
-  getPublishedContent,
+  getPublishedContentPage,
   type ContentType,
 } from "../lib/content";
 
@@ -74,14 +75,21 @@ export async function generateMetadata({
 
 export default async function SectionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ section: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { section } = await params;
+  const { page: pageParam } = await searchParams;
   const config = sections[section];
   if (!config) notFound();
 
-  const items = await getPublishedContent({ type: config.type });
+  const page = Math.max(1, Number(pageParam) || 1);
+  const { items, total, totalPages } = await getPublishedContentPage({
+    type: config.type,
+    page,
+  });
 
   return (
     <PageShell>
@@ -96,18 +104,46 @@ export default async function SectionPage({
         <div className="container">
           <div className="listing-toolbar">
             <p>
-              {items.length > 0
-                ? `${items.length} مواد متاحة حالياً`
+              {total > 0
+                ? `${total} مادة${totalPages > 1 ? ` · صفحة ${page} من ${totalPages}` : ""}`
                 : "لا توجد مواد منشورة حالياً"}
             </p>
-            <p>المحتوى التجريبي سيُستبدل بالمحتوى الرسمي.</p>
           </div>
           {items.length > 0 ? (
-            <div className="cards-grid cards-grid--three">
-              {items.map((item) => (
-                <ContentCard item={item} key={`${item.type}-${item.id}`} />
-              ))}
-            </div>
+            <>
+              <div className="cards-grid cards-grid--three">
+                {items.map((item) => (
+                  <ContentCard item={item} key={`${item.type}-${item.id}`} />
+                ))}
+              </div>
+              {totalPages > 1 ? (
+                <nav className="pagination" aria-label="صفحات">
+                  {page > 1 ? (
+                    <Link
+                      className="pagination__link"
+                      href={`/${section}?page=${page - 1}`}
+                    >
+                      ← السابق
+                    </Link>
+                  ) : (
+                    <span className="pagination__link is-disabled">← السابق</span>
+                  )}
+                  <span className="pagination__status">
+                    {page} / {totalPages}
+                  </span>
+                  {page < totalPages ? (
+                    <Link
+                      className="pagination__link"
+                      href={`/${section}?page=${page + 1}`}
+                    >
+                      التالي →
+                    </Link>
+                  ) : (
+                    <span className="pagination__link is-disabled">التالي →</span>
+                  )}
+                </nav>
+              ) : null}
+            </>
           ) : (
             <div className="empty-state">
               ستظهر المواد هنا عندما تنشرها البلدية من لوحة الإدارة.

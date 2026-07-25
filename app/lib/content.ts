@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "../../db";
 import { ensureRuntimeSchema } from "../../db/runtime";
 import {
@@ -348,6 +348,96 @@ export async function getGalleryImages(limit = 80): Promise<GalleryImage[]> {
       url: `/media/${encodeURIComponent(row.mediaKey)}`,
       alt: row.altText,
     }));
+  } catch {
+    return [];
+  }
+}
+
+export type ContentPage = {
+  items: PublicContent[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+// Server-side paginated listing (SEO-friendly, works without JS).
+export async function getPublishedContentPage({
+  type,
+  page = 1,
+  pageSize = 12,
+}: {
+  type?: ContentType;
+  page?: number;
+  pageSize?: number;
+}): Promise<ContentPage> {
+  const safePage = Math.max(1, Math.floor(page) || 1);
+  try {
+    await ensureRuntimeSchema();
+    const db = getDb();
+    const where = type
+      ? and(eq(contentItems.status, "published"), eq(contentItems.type, type))
+      : eq(contentItems.status, "published");
+
+    const [totalRow] = await db
+      .select({ total: count() })
+      .from(contentItems)
+      .where(where);
+    const total = Number(totalRow?.total || 0);
+
+    if (total > 0) {
+      const rows = await db
+        .select()
+        .from(contentItems)
+        .where(where)
+        .orderBy(desc(contentItems.featured), desc(contentItems.publishedAt))
+        .limit(pageSize)
+        .offset((safePage - 1) * pageSize);
+      return {
+        items: rows.map((row) => toPublicContent(row)),
+        total,
+        page: safePage,
+        pageSize,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      };
+    }
+
+    // No items of this type: if the DB holds other content, this list is empty.
+    const [anyRow] = await db
+      .select({ total: count() })
+      .from(contentItems)
+      .where(eq(contentItems.status, "published"));
+    if (Number(anyRow?.total || 0) > 0) {
+      return { items: [], total: 0, page: 1, pageSize, totalPages: 0 };
+    }
+  } catch {
+    // Fall back to sample content while the database is being provisioned.
+  }
+
+  const sampleItems = sampleRows.filter((row) => !type || row.type === type);
+  const total = sampleItems.length;
+  const start = (safePage - 1) * pageSize;
+  return {
+    items: sampleItems
+      .slice(start, start + pageSize)
+      .map((row) => toPublicContent(row)),
+    total,
+    page: safePage,
+    pageSize,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  };
+}
+
+// Published slugs for the sitemap.
+export async function getPublishedSlugs(): Promise<string[]> {
+  try {
+    await ensureRuntimeSchema();
+    const rows = await getDb()
+      .select({ slug: contentItems.slug })
+      .from(contentItems)
+      .where(eq(contentItems.status, "published"))
+      .limit(1000);
+    return rows.map((row) => row.slug);
   } catch {
     return [];
   }

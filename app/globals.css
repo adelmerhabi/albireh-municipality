@@ -3208,3 +3208,37 @@ textarea.form-control {
   font-size: 12px;
   vertical-align: middle;
 }
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 44px;
+}
+.pagination__link {
+  padding: 11px 22px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--green-900);
+  font-weight: 700;
+  font-size: 14px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.pagination__link:hover {
+  border-color: var(--gold);
+  background: var(--green-50);
+}
+.pagination__link.is-disabled {
+  color: #b7bdb8;
+  background: transparent;
+  pointer-events: none;
+}
+.pagination__status {
+  color: var(--muted);
+  font-weight: 700;
+  min-width: 60px;
+  text-align: center;
+}
