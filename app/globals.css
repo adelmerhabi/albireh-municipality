@@ -2912,3 +2912,38 @@ textarea.form-control {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   Hover: hovered card grows, siblings shrink (focus effect)
+   ============================================================ */
+.content-card,
+.quick-card {
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+}
+.content-card:hover {
+  transform: translateY(-6px) scale(1.035);
+  z-index: 2;
+}
+.quick-card:hover {
+  transform: translateY(-4px) scale(1.03);
+  z-index: 2;
+}
+.cards-grid:has(.content-card:hover) .content-card:not(:hover),
+.quick-grid:has(.quick-card:hover) .quick-card:not(:hover) {
+  transform: scale(0.97);
+  opacity: 0.72;
+}
+/* gallery tiles: hovered grows, siblings dim */
+.village-gallery:has(.village-gallery__item:hover)
+  .village-gallery__item:not(:hover) {
+  opacity: 0.6;
+  transform: scale(0.98);
+}
+.village-gallery__item {
+  transition: transform 0.32s ease, opacity 0.32s ease;
+}
+.village-gallery__item:hover {
+  transform: scale(1.03);
+  z-index: 2;
+}
