@@ -3098,3 +3098,40 @@ textarea.form-control {
   font-size: 13.5px;
   line-height: 1.7;
 }
+
+/* ============================================================
+   Emergency numbers grid
+   ============================================================ */
+.emergency-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 780px) { .emergency-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 460px) { .emergency-grid { grid-template-columns: 1fr; } }
+.emergency-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--red-700);
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.emergency-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+.emergency-card__num {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--red-700);
+  letter-spacing: 0.02em;
+  direction: ltr;
+}
+.emergency-card__label {
+  font-weight: 600;
+  color: var(--green-950);
+}
