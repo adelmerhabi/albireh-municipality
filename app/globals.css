@@ -4,28 +4,28 @@
   /* بلدية البيرة identity — a green-framed institution: deep emerald-pine
      brand (header/footer/accents), clean white content, warm gold highlights,
      charcoal text. No beige. Heritage photography carries the character. */
-  --green-950: #10362a;
-  --green-900: #164a35;
-  --green-800: #1c5c41;
-  --green-700: #2b7a58;
+  --green-950: #123d2c;
+  --green-900: #18523a;
+  --green-800: #1f5c43;
+  --green-700: #2c7255;
   --green-600: #3d9068;
-  --green-100: #e8f1ec;
-  --green-50: #f2f7f3;
+  --green-100: #e9f1ed;
+  --green-50: #f4f8f5;
   --red-700: #b5623c;
   --red-100: #f4e7df;
-  --ink: #1c1e1b;
-  --muted: #667069;
-  --paper: #f3f6f3;
+  --ink: #1b1c1a;
+  --muted: #6d726c;
+  --paper: #f6f7f5;
   --white: #ffffff;
-  --line: #e3e8e3;
-  --shadow: 0 20px 50px rgba(16, 40, 30, 0.1);
-  --radius: 16px;
-  --gold: #bd8f3c;
-  --gold-soft: #e6cf96;
+  --line: #e8e9e5;
+  --shadow: 0 24px 60px rgba(20, 30, 24, 0.09);
+  --radius: 14px;
+  --gold: #a9852b;
+  --gold-soft: #d9b978;
   --clay: #b5623c;
   --basalt: #1f1d1a;
-  --font-display: "Amiri", "Tajawal", Georgia, serif;
-  --font-body: "Tajawal", Tahoma, Arial, sans-serif;
+  --font-display: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font-body: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
 }
 
 * {
@@ -111,9 +111,10 @@ textarea {
   position: sticky;
   z-index: 50;
   top: 0;
-  border-bottom: 3px solid var(--gold);
-  background: var(--green-950);
-  color: #fff;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  color: var(--ink);
 }
 
 .site-header__inner {
@@ -136,14 +137,17 @@ textarea {
 }
 
 .brand strong {
-  color: #fff;
+  color: var(--green-950);
   font-size: 18px;
+  font-weight: 700;
 }
 
 .brand span {
-  margin-top: -3px;
-  color: var(--gold-soft);
+  margin-top: -2px;
+  color: var(--gold);
   font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .cedar-crop {
@@ -194,14 +198,14 @@ textarea {
   display: block;
   border-radius: 9px;
   padding: 10px 11px;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 13px;
-  font-weight: 700;
+  color: #3a423c;
+  font-size: 13.5px;
+  font-weight: 600;
   transition: color 160ms ease;
 }
 
 .main-nav a:hover {
-  color: #fff;
+  color: var(--green-800);
 }
 
 .header-actions {
@@ -215,15 +219,16 @@ textarea {
   height: 40px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid var(--line);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--white);
+  color: var(--green-800);
   font-size: 18px;
-  transition: background 0.2s ease;
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 .header-search:hover {
-  background: rgba(255, 255, 255, 0.18);
+  border-color: var(--gold);
+  color: var(--gold);
 }
 
 .admin-link {
