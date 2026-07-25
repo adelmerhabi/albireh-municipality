@@ -10,6 +10,7 @@ const navigation = [
   ["الفعاليات", "/events"],
   ["المشاريع", "/projects"],
   ["الحملات", "/donations"],
+  ["معاملات", "/services/documents"],
   ["أرسل طلباً", "/requests"],
   ["التواصل", "/contact"],
 ];
