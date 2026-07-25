@@ -5,6 +5,8 @@ import { MediaGallery } from "../../components/MediaGallery";
 import { PageShell } from "../../components/PageShell";
 import { getContentBySlug } from "../../lib/content";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params,
 }: {

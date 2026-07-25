@@ -1,5 +1,6 @@
 import { getAdminIdentity } from "../../../../lib/admin-auth";
 import {
+  deleteResidentRequest,
   setResidentRequestStatus,
   type ResidentRequestStatus,
 } from "../../../../lib/requests";
@@ -49,6 +50,38 @@ export async function PATCH(
       {
         error:
           error instanceof Error ? error.message : "تعذّر تحديث الرسالة",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const identity = await getAdminIdentity();
+  if (!identity) {
+    return Response.json({ error: "غير مصرح" }, { status: 401 });
+  }
+
+  const { id: rawId } = await params;
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id < 1) {
+    return Response.json({ error: "الطلب غير صالح" }, { status: 400 });
+  }
+
+  try {
+    const deleted = await deleteResidentRequest(id, identity.email);
+    if (!deleted) {
+      return Response.json({ error: "الرسالة غير موجودة" }, { status: 404 });
+    }
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    return Response.json(
+      {
+        error:
+          error instanceof Error ? error.message : "تعذّر حذف الرسالة",
       },
       { status: 500 },
     );

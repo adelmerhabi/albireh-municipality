@@ -23,6 +23,7 @@ const localBindingConfig = {
       binding: d1,
       database_name: d1DatabaseName,
       database_id: d1DatabaseId,
+      migrations_dir: "drizzle",
     },
   ],
   r2_buckets: [

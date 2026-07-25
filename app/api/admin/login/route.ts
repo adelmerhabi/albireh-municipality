@@ -7,6 +7,12 @@ import {
   createSessionToken,
   sessionCookie,
 } from "../../../lib/admin-auth";
+import {
+  clearLoginFailures,
+  getLoginThrottle,
+  isLoginBlocked,
+  recordFailedLogin,
+} from "../../../lib/login-throttle";
 import { verifyPassword } from "../../../lib/passwords";
 
 export async function POST(request: Request) {
@@ -16,7 +22,10 @@ export async function POST(request: Request) {
     .toLowerCase()
     .slice(0, 80);
   const password = String(form.get("password") || "").slice(0, 300);
-  const returnTo = safeReturnPath(String(form.get("returnTo") || "/admin"));
+  const returnTo = safeReturnPath(
+    String(form.get("returnTo") || "/admin"),
+    request.url,
+  );
 
   const runtimeEnv = env as unknown as Record<string, string | undefined>;
   const bootstrapUsername = String(
@@ -27,15 +36,21 @@ export async function POST(request: Request) {
   let passwordHash = "";
   let displayName = username;
   let active = false;
+  let throttle: Awaited<ReturnType<typeof getLoginThrottle>>;
 
-  // The recovery administrator must stay available even if the account
-  // database is temporarily unavailable or contains a conflicting username.
-  if (bootstrapUsername && username === bootstrapUsername) {
-    passwordHash = runtimeEnv.ADMIN_BOOTSTRAP_PASSWORD_HASH || "";
-    displayName = runtimeEnv.ADMIN_BOOTSTRAP_DISPLAY_NAME || "مدير الموقع";
-    active = true;
-  } else {
-    try {
+  try {
+    throttle = await getLoginThrottle(request, username);
+    if (await isLoginBlocked(throttle)) {
+      return loginRedirect(request, returnTo, "locked", throttle.retryAfterSeconds);
+    }
+
+    // The bootstrap account remains independent of the account table, but
+    // every login path is still protected by the D1-backed attempt limiter.
+    if (bootstrapUsername && username === bootstrapUsername) {
+      passwordHash = runtimeEnv.ADMIN_BOOTSTRAP_PASSWORD_HASH || "";
+      displayName = runtimeEnv.ADMIN_BOOTSTRAP_DISPLAY_NAME || "مدير الموقع";
+      active = true;
+    } else {
       await ensureRuntimeSchema();
       const [storedUser] = await getDb()
         .select()
@@ -48,24 +63,29 @@ export async function POST(request: Request) {
         displayName = storedUser.displayName;
         active = storedUser.active;
       }
-    } catch {
-      // Authentication fails closed if the account store is unavailable.
     }
+  } catch {
+    // Do not permit unthrottled authentication if D1 is unavailable.
+    return Response.json(
+      { error: "خدمة تسجيل الدخول غير متاحة مؤقتاً" },
+      { status: 503, headers: { "retry-after": "60" } },
+    );
   }
 
   const primaryPasswordIsValid =
     Boolean(passwordHash) && (await verifyPassword(password, passwordHash));
   const valid = active && primaryPasswordIsValid;
   if (!valid) {
-    return Response.redirect(
-      new URL(
-        `/admin/login?error=1&return_to=${encodeURIComponent(returnTo)}`,
-        request.url,
-      ),
-      303,
+    const blocked = await recordFailedLogin(throttle);
+    return loginRedirect(
+      request,
+      returnTo,
+      blocked ? "locked" : "invalid",
+      blocked ? throttle.retryAfterSeconds : undefined,
     );
   }
 
+  await clearLoginFailures(throttle);
   const token = await createSessionToken(username, displayName);
   if (!token || token.endsWith(".")) {
     return Response.json(
@@ -83,6 +103,31 @@ export async function POST(request: Request) {
   });
 }
 
-function safeReturnPath(value: string) {
-  return value.startsWith("/") && !value.startsWith("//") ? value : "/admin";
+function safeReturnPath(value: string, requestUrl: string) {
+  if (!value.startsWith("/") || value.startsWith("//")) return "/admin";
+  try {
+    const base = new URL(requestUrl);
+    const target = new URL(value, base);
+    if (target.origin !== base.origin) return "/admin";
+    return `${target.pathname}${target.search}${target.hash}`;
+  } catch {
+    return "/admin";
+  }
+}
+
+function loginRedirect(
+  request: Request,
+  returnTo: string,
+  error: "invalid" | "locked",
+  retryAfter?: number,
+) {
+  const headers = new Headers({
+    location: new URL(
+      `/admin/login?error=${error}&return_to=${encodeURIComponent(returnTo)}`,
+      request.url,
+    ).toString(),
+    "cache-control": "private, no-store",
+  });
+  if (retryAfter) headers.set("retry-after", String(retryAfter));
+  return new Response(null, { status: 303, headers });
 }

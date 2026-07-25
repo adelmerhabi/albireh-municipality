@@ -1,11 +1,16 @@
 import { env } from "cloudflare:workers";
+import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getDb } from "../../db";
+import { ensureRuntimeSchema } from "../../db/runtime";
+import { adminUsers } from "../../db/schema";
 
 export type AdminIdentity = {
   username: string;
   displayName: string;
   email: string;
+  role: "bootstrap" | "editor";
 };
 
 export const ADMIN_COOKIE = "bireh_admin_session";
@@ -24,11 +29,49 @@ export async function getAdminIdentity(): Promise<AdminIdentity | null> {
   const payload = await verifySessionToken(token);
   if (!payload || payload.exp < Math.floor(Date.now() / 1000)) return null;
 
-  return {
-    username: payload.username,
-    displayName: payload.displayName,
-    email: `${payload.username}@admin.bireh.local`,
-  };
+  const runtimeEnv = env as unknown as Record<string, string | undefined>;
+  const bootstrapUsername = String(
+    runtimeEnv.ADMIN_BOOTSTRAP_USERNAME || "admin",
+  )
+    .trim()
+    .toLowerCase();
+  if (payload.username.toLowerCase() === bootstrapUsername) {
+    return {
+      username: payload.username,
+      displayName:
+        runtimeEnv.ADMIN_BOOTSTRAP_DISPLAY_NAME || payload.displayName,
+      email: `${payload.username}@admin.bireh.local`,
+      role: "bootstrap",
+    };
+  }
+
+  // Employee sessions are revalidated against D1 on every request. Disabling
+  // an account therefore revokes its current session immediately instead of
+  // waiting for the signed cookie's eight-hour expiry.
+  try {
+    await ensureRuntimeSchema();
+    const [storedUser] = await getDb()
+      .select({
+        username: adminUsers.username,
+        displayName: adminUsers.displayName,
+        role: adminUsers.role,
+        active: adminUsers.active,
+      })
+      .from(adminUsers)
+      .where(eq(adminUsers.username, payload.username.toLowerCase()))
+      .limit(1);
+    if (!storedUser?.active) return null;
+
+    return {
+      username: storedUser.username,
+      displayName: storedUser.displayName,
+      email: `${storedUser.username}@admin.bireh.local`,
+      role: "editor",
+    };
+  } catch {
+    // Fail closed when the employee account store cannot be checked.
+    return null;
+  }
 }
 
 export async function requireAdmin(returnTo = "/admin") {

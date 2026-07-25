@@ -2,15 +2,20 @@ import Link from "next/link";
 import { getAdminContent } from "../lib/content";
 import { requireAdmin } from "../lib/admin-auth";
 import { getAdminResidentRequests } from "../lib/requests";
+import { getEmployeeUsers } from "../lib/admin-users";
+import { getPublicSiteSettings } from "../lib/site-settings";
 import { AdminDashboard } from "./AdminDashboard";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const [identity, items, requests] = await Promise.all([
-    requireAdmin("/admin"),
+  const identity = await requireAdmin("/admin");
+  const canManageUsers = identity.role === "bootstrap";
+  const [items, requests, employees, settings] = await Promise.all([
     getAdminContent(),
     getAdminResidentRequests(),
+    canManageUsers ? getEmployeeUsers() : Promise.resolve([]),
+    getPublicSiteSettings(),
   ]);
 
   return (
@@ -28,13 +33,14 @@ export default async function AdminPage() {
           </Link>
           <div>
             <span className="admin-header__user">{identity.displayName}</span>
-            <a
+            <Link
               className="button button--ghost"
               href="/api/admin/logout"
+              prefetch={false}
               style={{ marginInlineStart: 12, minHeight: 38, padding: "7px 12px" }}
             >
               خروج
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -47,11 +53,17 @@ export default async function AdminPage() {
               من مكان واحد.
             </p>
           </div>
-          <a className="button button--ghost" href="/">
+          <Link className="button button--ghost" href="/">
             معاينة الموقع
-          </a>
+          </Link>
         </div>
-        <AdminDashboard initialItems={items} initialRequests={requests} />
+        <AdminDashboard
+          initialItems={items}
+          initialRequests={requests}
+          initialEmployees={employees}
+          initialSettings={settings}
+          canManageUsers={canManageUsers}
+        />
       </main>
     </div>
   );

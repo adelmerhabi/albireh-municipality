@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminIdentity } from "../../lib/admin-auth";
 
@@ -21,7 +22,7 @@ export default async function AdminLoginPage({
   return (
     <main className="login-page" dir="rtl">
       <section className="login-card">
-        <a className="brand login-card__brand" href="/">
+        <Link className="brand login-card__brand" href="/">
           <span className="cedar-crop cedar-crop--large">
             <img src="/municipality-source.jpg" alt="" />
           </span>
@@ -29,7 +30,7 @@ export default async function AdminLoginPage({
             <strong>بلدية البيرة – عكار</strong>
             <span>لوحة إدارة المحتوى</span>
           </span>
-        </a>
+        </Link>
         <div className="login-card__intro">
           <p className="eyebrow">دخول الموظفين فقط</p>
           <h1>أهلاً وسهلاً</h1>
@@ -37,7 +38,9 @@ export default async function AdminLoginPage({
         </div>
         {error ? (
           <div className="login-error">
-            اسم المستخدم أو كلمة المرور غير صحيحة.
+            {error === "locked"
+              ? "تم إيقاف محاولات الدخول مؤقتاً للحماية. يرجى المحاولة بعد 15 دقيقة."
+              : "اسم المستخدم أو كلمة المرور غير صحيحة."}
           </div>
         ) : null}
         <form className="admin-form login-form" action="/api/admin/login" method="post">
@@ -67,9 +70,9 @@ export default async function AdminLoginPage({
             دخول إلى لوحة البلدية
           </button>
         </form>
-        <a className="text-link login-back" href="/">
+        <Link className="text-link login-back" href="/">
           العودة إلى الموقع العام
-        </a>
+        </Link>
       </section>
     </main>
   );

@@ -1,40 +1,72 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageShell } from "../components/PageShell";
+import { getPublicSiteSettings } from "../lib/site-settings";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "الدليل والتواصل",
   description:
-    "معلومات التواصل مع بلدية البيرة – عكار، أرقام الطوارئ الوطنية، ومرافق البلدة.",
+    "معلومات التواصل الرسمية مع بلدية البيرة – عكار وأرقام الطوارئ الوطنية الموثقة.",
 };
 
-const MAP_URL = "https://maps.app.goo.gl/HJ8JEpovcfEXJt2u6";
-
-const municipalityContacts: Array<[string, string, string]> = [
-  ["الهاتف", "يُعتمد رقم البلدية", "زر اتصال مباشر سيعمل من الهاتف"],
-  ["البريد الإلكتروني", "يُعتمد قبل الإطلاق", "للملاحظات والاستفسارات العامة"],
-  ["العنوان", "البيرة – عكار، الطريق العام", "يُحدَّد موقع المبنى على الخريطة"],
-  ["أوقات الدوام", "تُعلَن رسمياً", "أيام وساعات استقبال المراجعين"],
-];
-
-// National Lebanese emergency numbers (stable, safe to publish).
+// Verified against the official pages of each Lebanese service in July 2026.
 const emergencyNumbers: Array<[string, string]> = [
-  ["الدفاع المدني", "125"],
-  ["الصليب الأحمر (إسعاف)", "140"],
+  ["الدفاع المدني – إطفاء وإنقاذ", "125"],
+  ["الصليب الأحمر اللبناني – إسعاف", "140"],
   ["قوى الأمن الداخلي", "112"],
-  ["الجيش اللبناني", "1701"],
-  ["أمن الدولة", "1707"],
-  ["الحريق والإنقاذ", "125"],
+  ["غرفة عمليات الجيش اللبناني", "117"],
 ];
 
-const facilities: Array<[string, string]> = [
-  ["المدرسة الرسمية", "تُضاف معلومات التواصل"],
-  ["المركز الصحي الاجتماعي", "على الطريق العام (تُثبَّت الأرقام رسمياً)"],
-  ["المختار", "يُضاف اسم ورقم المختار"],
-  ["أماكن العبادة", "المسجد والكنائس في البلدة"],
-];
+export default async function ContactPage() {
+  const settings = await getPublicSiteSettings();
+  const contactCards = [
+    settings.municipalityPhone
+      ? {
+          label: "هاتف البلدية",
+          value: settings.municipalityPhone,
+          hint: "اضغط للاتصال مباشرة",
+          href: `tel:${settings.municipalityPhone.replace(/[^\d+]/g, "")}`,
+        }
+      : null,
+    settings.municipalityEmail
+      ? {
+          label: "البريد الإلكتروني",
+          value: settings.municipalityEmail,
+          hint: "للملاحظات والاستفسارات العامة",
+          href: `mailto:${settings.municipalityEmail}`,
+        }
+      : null,
+    settings.whatsappNumber
+      ? {
+          label: "واتساب البلدية",
+          value: settings.whatsappNumber,
+          hint: "قناة تواصل تعتمدها البلدية",
+          href: `https://wa.me/${settings.whatsappNumber.replace(/\D/g, "")}`,
+        }
+      : null,
+    settings.municipalityAddress
+      ? {
+          label: "العنوان",
+          value: settings.municipalityAddress,
+          hint: "العنوان المعتمد لاستقبال المراجعين",
+        }
+      : null,
+    settings.officeHours
+      ? {
+          label: "أوقات الدوام",
+          value: settings.officeHours,
+          hint: "قد تتغير في العطل والمناسبات الرسمية",
+        }
+      : null,
+  ].filter((card): card is NonNullable<typeof card> => Boolean(card));
+  const hasDirectContact = Boolean(
+    settings.municipalityPhone ||
+      settings.municipalityEmail ||
+      settings.whatsappNumber,
+  );
 
-export default function ContactPage() {
   return (
     <PageShell>
       <section className="page-hero">
@@ -42,8 +74,8 @@ export default function ContactPage() {
           <p className="eyebrow">قريبون منكم</p>
           <h1>الدليل والتواصل</h1>
           <p>
-            معلومات التواصل مع البلدية، أرقام الطوارئ، ومرافق البلدة في مكانٍ
-            واحد. تُثبَّت الأرقام المحلية رسمياً من البلدية قبل الإطلاق العام.
+            معلومات التواصل التي تعتمدها البلدية وأرقام الطوارئ الوطنية في
+            مكان واحد. لا تستخدم نموذج الطلبات بديلاً عن الاتصال بالطوارئ.
           </p>
         </div>
       </section>
@@ -57,24 +89,43 @@ export default function ContactPage() {
             </div>
           </div>
           <div className="contact-grid">
-            {municipalityContacts.map(([label, value, hint]) => (
-              <div className="contact-card" key={label}>
-                <small>{label}</small>
-                <strong>{value}</strong>
-                <span>{hint}</span>
-              </div>
-            ))}
+            {contactCards.map((card) =>
+              card.href ? (
+                <a className="contact-card" href={card.href} key={card.label}>
+                  <small>{card.label}</small>
+                  <strong>
+                    <bdi>{card.value}</bdi>
+                  </strong>
+                  <span>{card.hint}</span>
+                </a>
+              ) : (
+                <div className="contact-card" key={card.label}>
+                  <small>{card.label}</small>
+                  <strong>{card.value}</strong>
+                  <span>{card.hint}</span>
+                </div>
+              ),
+            )}
           </div>
-          <div style={{ marginTop: 22 }}>
-            <a
-              className="button button--primary"
-              href={MAP_URL}
-              target="_blank"
-              rel="noreferrer"
-            >
-              موقع البلدة على الخريطة
-            </a>
-          </div>
+          {!hasDirectContact ? (
+            <div className="empty-state" style={{ marginTop: 18 }}>
+              لم تعتمد البلدية بعد رقم هاتف أو بريداً إلكترونياً للنشر. يمكن
+              حالياً إرسال ملاحظة خاصة عبر{" "}
+              <Link href="/requests">صفحة الطلبات والشكاوى</Link>.
+            </div>
+          ) : null}
+          {settings.mapUrl ? (
+            <div style={{ marginTop: 22 }}>
+              <a
+                className="button button--primary"
+                href={settings.mapUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                الموقع على الخريطة
+              </a>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -82,8 +133,8 @@ export default function ContactPage() {
         <div className="container">
           <div className="section-heading section-heading--compact">
             <div>
-              <p className="eyebrow">للحالات الطارئة</p>
-              <h2>أرقام الطوارئ</h2>
+              <p className="eyebrow">للخطر الفوري</p>
+              <h2>أرقام الطوارئ الوطنية</h2>
             </div>
           </div>
           <div className="emergency-grid">
@@ -95,30 +146,8 @@ export default function ContactPage() {
             ))}
           </div>
           <p className="field-help" style={{ marginTop: 14 }}>
-            أرقام وطنية موحّدة. اضغط الرقم للاتصال مباشرةً من الهاتف.
-          </p>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container">
-          <div className="section-heading section-heading--compact">
-            <div>
-              <p className="eyebrow">في خدمة الأهالي</p>
-              <h2>مرافق البلدة ومؤسساتها</h2>
-            </div>
-          </div>
-          <div className="contact-grid">
-            {facilities.map(([label, hint]) => (
-              <div className="contact-card" key={label}>
-                <strong>{label}</strong>
-                <span>{hint}</span>
-              </div>
-            ))}
-          </div>
-          <p className="field-help" style={{ marginTop: 18 }}>
-            لإضافة أو تصحيح أي معلومة، تواصلوا مع البلدية عبر{" "}
-            <Link href="/requests">صفحة الطلبات</Link>.
+            أرقام وطنية منشورة على المواقع الرسمية للجهات المعنية. اضغط الرقم
+            للاتصال مباشرة من الهاتف.
           </p>
         </div>
       </section>

@@ -3,6 +3,8 @@ import { ContentCard } from "../components/ContentCard";
 import { PageShell } from "../components/PageShell";
 import { getPublishedContent } from "../lib/content";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "التنبيهات والطوارئ",
 };

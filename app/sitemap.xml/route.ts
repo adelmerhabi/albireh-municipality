@@ -9,6 +9,7 @@ const staticPaths = [
   "gallery",
   "about",
   "contact",
+  "privacy",
   "requests",
   "services/documents",
 ];

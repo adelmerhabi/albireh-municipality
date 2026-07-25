@@ -1,218 +1,237 @@
-# Deploying the Al‑Bireh municipality website (self‑owned, free)
+# نشر موقع بلدية البيرة على Cloudflare
 
-This app is a single **Cloudflare Worker** that serves the public Arabic/RTL
-site, the admin dashboard, and the API. It uses two Cloudflare resources:
+هذه التعليمات تنشر الموقع وD1 وR2 داخل حساب تملكه البلدية. الرابط الحالي
+للـ Worker هو:
 
-- **D1** (SQLite) — content, resident requests, admin users, audit log.
-- **R2** (object storage) — uploaded images and files.
+`https://baladiya.albireh.workers.dev`
 
-Everything below runs on Cloudflare's **free tier**, which is more than enough
-for a ~6,000‑resident municipality (Workers 100k requests/day, D1 5 GB, R2
-10 GB with no egress fees). Unlike some free platforms, Cloudflare Workers/D1/R2
-**never sleep**.
+تعتمد حدود الاستخدام والتكلفة على خطة Cloudflare الفعلية وقت النشر؛ راجع
+لوحة الحساب قبل الإطلاق ولا تعتمد على أرقام قديمة مكتوبة في المستودع.
 
-The goal of this document is that the **municipality owns everything** — the
-account, the database, the files, the domain, and the deploys. No third party
-sits in the middle.
+## 1. المتطلبات
 
----
-
-## 0. One‑time prerequisites (on the machine you deploy from)
-
-- A free **Cloudflare account** — https://dash.cloudflare.com/sign-up
-- **Node.js ≥ 22.13** — https://nodejs.org
-- Install dependencies once: `npm install`
-- Wrangler is already a dev dependency; call it with `npx wrangler …`.
-
-Sign in (opens a browser once):
+- حساب Cloudflare تملكه البلدية.
+- Node.js `>=22.13.0`.
+- صلاحية نشر Worker وإدارة D1 وR2 في الحساب.
+- نسخة نظيفة من المستودع.
 
 ```bash
+npm ci
 npx wrangler login
 ```
 
----
+لا تضع كلمات المرور أو الرموز أو ملفات `.env` في Git.
 
-## 1. Create the database and storage bucket (in YOUR account)
+## 2. تحديد موارد الإنتاج
 
-```bash
-npx wrangler d1 create site-creator-d1
-npx wrangler r2 bucket create site-creator-r2
-```
-
-`d1 create` prints a **`database_id`** — copy it. Keep the names
-`site-creator-d1` and `site-creator-r2` so they match the build output (only
-the id differs from the placeholder).
-
-> The R2 bucket is matched by **name**, so nothing else is needed for it.
-
----
-
-## 2. Build with your database id
-
-Set the id as an environment variable so the generated Cloudflare config points
-at your real database (see `vite.config.ts`):
+إذا كان الموقع منشوراً مسبقاً، **أعد استخدام D1 وR2 الحاليين** حتى لا تظهر
+قاعدة فارغة أو تضيع المرفقات. اعرض الموارد المسجلة في الحساب:
 
 ```bash
-# macOS / Linux
-CF_D1_DATABASE_ID=<your-database-id> npm run build
+npx wrangler d1 list
+npx wrangler r2 bucket list
 ```
+
+الإعدادات القديمة تستخدم غالباً `site-creator-d1` و`site-creator-r2`؛ تحقق من
+لوحة Cloudflare ولا تفترض الاسم. احفظ اسم D1 و`database_id` واسم حاوية R2.
+
+فقط عند تركيب جديد لا يملك موارد سابقة، أنشئ موارد بأسماء واضحة:
+
+```bash
+npx wrangler d1 create albireh-municipality-db
+npx wrangler r2 bucket create albireh-municipality-media
+```
+
+في بقية التعليمات، استبدل `YOUR_DATABASE_NAME` و`YOUR_R2_BUCKET_NAME` بالقيم
+الفعلية نفسها في كل نشر.
+
+## 3. بناء نسخة الإنتاج
+
+macOS أو Linux:
+
+```bash
+CF_D1_DATABASE_ID="<database-id>" \
+CF_D1_DATABASE_NAME="YOUR_DATABASE_NAME" \
+CF_R2_BUCKET_NAME="YOUR_R2_BUCKET_NAME" \
+npm run build
+```
+
+Windows PowerShell:
 
 ```powershell
-# Windows PowerShell
-$env:CF_D1_DATABASE_ID="<your-database-id>"; npm run build
+$env:CF_D1_DATABASE_ID="<database-id>"
+$env:CF_D1_DATABASE_NAME="YOUR_DATABASE_NAME"
+$env:CF_R2_BUCKET_NAME="YOUR_R2_BUCKET_NAME"
+npm run build
 ```
 
-The build writes `dist/server/wrangler.json` (Worker config) and
-`dist/client/` (static assets).
+يبني الأمر Worker في `dist/server` والملفات العامة في `dist/client`. افحص
+`dist/server/wrangler.json` وتأكد أن اسم Worker هو `baladiya` وأن D1 وR2
+يشيران إلى موارد الإنتاج الصحيحة، وأن `migrations_dir` يشير إلى مجلد
+`drizzle/` في جذر المشروع.
 
-> **Fallback if the id is still the placeholder** (`00000000-…`) after build:
-> open `dist/server/wrangler.json` and replace the `database_id` value in the
-> `d1_databases` entry with your real id before deploying. Nothing else needs
-> to change.
+## 4. تطبيق migrations
 
----
+### قاعدة جديدة لم تستقبل أي طلب بعد
 
-## 3. Initialize the database
-
-You have two options — **either** works:
-
-- **Do nothing.** The app self‑creates every table and column on the first
-  request (`db/runtime.ts` → `ensureRuntimeSchema`, idempotent). A brand‑new
-  D1 will initialize itself, including the Wish campaign columns.
-- **Or apply the Drizzle migrations explicitly** (optional, e.g. if you want the
-  schema present before first traffic):
-
-  ```bash
-  npx wrangler d1 migrations apply site-creator-d1 --remote
-  ```
-
-  (Run from the project root; the SQL lives in `drizzle/`.)
-
----
-
-## 4. Set production secrets
-
-These replace the temporary values baked into the code. Set them against the
-deployed Worker (`site-creator-vinext-starter` unless you renamed it — see
-step 7). Run each and paste the value when prompted:
+بعد نجاح build، طبّق السلسلة كاملة قبل أول deploy:
 
 ```bash
-npx wrangler secret put ADMIN_SESSION_SECRET          # long random string
-npx wrangler secret put ADMIN_BOOTSTRAP_USERNAME      # e.g. admin
-npx wrangler secret put ADMIN_BOOTSTRAP_PASSWORD_HASH # pbkdf2 hash, see below
-npx wrangler secret put ADMIN_BOOTSTRAP_DISPLAY_NAME  # e.g. مدير الموقع
+npx wrangler d1 migrations apply YOUR_DATABASE_NAME --remote --config dist/server/wrangler.json
 ```
 
-Generate a compatible `ADMIN_BOOTSTRAP_PASSWORD_HASH` (PBKDF2‑SHA256, 210k
-iterations — the format the login route expects):
+راجع نتيجة الأمر وتأكد من تطبيق جميع الملفات الظاهرة.
 
-```powershell
-# Windows PowerShell — replace YOUR_PASSWORD
-$p='YOUR_PASSWORD'; $s=[byte[]]::new(16); [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($s); $k=[System.Security.Cryptography.Rfc2898DeriveBytes]::new([Text.Encoding]::UTF8.GetBytes($p),$s,100000,'SHA256'); 'pbkdf2-sha256$100000$'+[Convert]::ToBase64String($s)+'$'+[Convert]::ToBase64String($k.GetBytes(32))
-```
+### قاعدة حالية سبق أن شغّلت الموقع
 
-```bash
-# macOS / Linux (node) — replace YOUR_PASSWORD
-node -e 'const c=require("crypto");const s=c.randomBytes(16);const k=c.pbkdf2Sync("YOUR_PASSWORD",s,100000,32,"sha256");console.log("pbkdf2-sha256$100000$"+s.toString("base64")+"$"+k.toString("base64"))'
-```
+لا تشغّل السلسلة كاملة بشكل أعمى. الإصدارات السابقة كانت تستطيع إنشاء الجداول
+عبر `db/runtime.ts` من دون تسجيلها في جدول migrations، ولذلك قد يحاول Wrangler
+إنشاء جداول موجودة أصلاً ويفشل. قبل الترقية:
 
-> Secrets can be set after the first deploy too; the Worker just needs to exist.
-> If a command says the Worker isn't found, do step 5 first, then set secrets.
+1. صدّر نسخة احتياطية.
+2. افحص سجل migrations وحالة schema على نسخة staging.
+3. جهّز ترقية idempotent تم التحقق منها لهذه القاعدة، أو دع
+   `ensureRuntimeSchema` الحالي يصالح الجداول والأعمدة التي يدعمها.
+4. لا تعدّل migration قديماً ولا تحذف بيانات لتجاوز خطأ.
 
----
+`db/runtime.ts` يهيئ الجداول في قاعدة فارغة ويصالح بعض الأعمدة القديمة كشبكة
+أمان. عند اعتماد تتبع migrations رسمياً، أنشئ baseline موثقاً على نسخة staging
+قبل تغيير قاعدة الإنتاج.
 
-## 5. Deploy
+## 5. أول نشر
 
 ```bash
 cd dist/server
 npx wrangler deploy
 ```
 
-When it finishes it prints your live URL:
+النشر الأول ينشئ Worker إن لم يكن موجوداً. لن يعمل دخول الإدارة قبل ضبط
+الأسرار في الخطوة التالية، بينما يجب أن يبقى الموقع العام قابلاً للفتح.
 
-```
-https://site-creator-vinext-starter.<your-subdomain>.workers.dev
-```
+## 6. إعداد حساب الاستعادة والأسرار
 
-Open it, go to `/admin/login`, and sign in with the bootstrap username +
-password from step 4.
-
----
-
-## 6. Redeploying after changes
+من `dist/server`، اضبط القيم التالية عندما يطلبها Wrangler:
 
 ```bash
-CF_D1_DATABASE_ID=<your-database-id> npm run build   # from project root
-cd dist/server && npx wrangler deploy
+npx wrangler secret put ADMIN_SESSION_SECRET
+npx wrangler secret put ADMIN_BOOTSTRAP_USERNAME
+npx wrangler secret put ADMIN_BOOTSTRAP_PASSWORD_HASH
+npx wrangler secret put ADMIN_BOOTSTRAP_DISPLAY_NAME
 ```
 
-Data in D1/R2 is preserved across deploys.
+ولّد `ADMIN_SESSION_SECRET` عشوائياً، مثلاً:
 
----
-
-## 7. (Optional) Rename the Worker / URL
-
-The Worker name (and the `*.workers.dev` slug) comes from the `name` field in
-`package.json`. To get `al-bireh.<subdomain>.workers.dev`, change:
-
-```json
-"name": "al-bireh-municipality"
+```bash
+node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"
 ```
 
-then rebuild and redeploy. (Do this **before** attaching a custom domain.)
+يجب أن يكون hash كلمة المرور بصيغة PBKDF2-SHA256 مع **100,000 iteration**،
+وهو الحد المتوافق مع Cloudflare Workers الذي يستخدمه
+`app/lib/passwords.ts`.
 
----
+Windows PowerShell (استبدل `YOUR_PASSWORD` محلياً ولا تحفظه في history
+مشترك):
 
-## 8. Custom `.lb` domain
+```powershell
+$p='YOUR_PASSWORD'
+$s=[byte[]]::new(16)
+[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($s)
+$k=[System.Security.Cryptography.Rfc2898DeriveBytes]::new([Text.Encoding]::UTF8.GetBytes($p),$s,100000,'SHA256')
+'pbkdf2-sha256$100000$'+[Convert]::ToBase64String($s)+'$'+[Convert]::ToBase64String($k.GetBytes(32))
+```
 
-`.lb` domains are **not instant** — they are approved manually, so launch on the
-free `*.workers.dev` URL now and attach the domain when it's granted.
+macOS أو Linux:
 
-**Registry & process (as of 2026):**
+```bash
+node -e 'const c=require("node:crypto");const s=c.randomBytes(16);const k=c.pbkdf2Sync("YOUR_PASSWORD",s,100000,32,"sha256");console.log("pbkdf2-sha256$100000$"+s.toString("base64")+"$"+k.toString("base64"))'
+```
 
-- `.lb` is run by the **Lebanese Domain Registry (LBDR)**. Since Feb 2021 you
-  must register **through an accredited registrar**, not directly.
-- For an official **`gov.lb`** name (e.g. `albireh.gov.lb`), registration is
-  **restricted to Lebanese government departments** and goes through **OMSAR** —
-  the registrar emails the LBDR‑A form and supporting documents to
-  `govlbdr@omsar.gov.lb`. A municipality (بلدية) qualifies but must provide
-  official proof and authorization. This is the most legitimate option and
-  worth pursuing for a municipality.
-- Faster alternatives while `gov.lb` is processed: **`.org.lb`** or **`.com.lb`**
-  via an LBDR registrar with proof of the entity.
+بعد ضبط الأسرار:
 
-**Connecting the domain to the Worker (once you have it):**
+1. افتح `/admin/login`.
+2. جرّب الدخول والخروج بحساب الاستعادة.
+3. أنشئ/تحقق من حساب الموظف الثاني إن كان مطلوباً.
+4. أدخل معلومات التواصل المعتمدة من تبويب «معلومات التواصل».
+5. لا تشارك حساباً واحداً بين عدة موظفين.
 
-1. In the Cloudflare dashboard, **Add a site** for the domain (e.g.
-   `albireh.gov.lb`) — choose the Free plan.
-2. Cloudflare gives you two **nameservers**. Ask your `.lb` registrar / OMSAR to
-   set those as the domain's authoritative nameservers.
-3. After the domain is active in Cloudflare: **Workers & Pages → your Worker →
-   Settings → Domains & Routes → Add custom domain** → enter the hostname.
-   Cloudflare provisions HTTPS automatically.
+لا تضبط `ENABLE_SAMPLE_CONTENT` في الإنتاج. هذا المتغير مخصص فقط للمعاينة
+المحلية، وتفعيله يعرض مواد تجريبية عندما تكون قاعدة المحتوى فارغة.
 
-Sources for `.lb` details:
-- LBDR — https://lbdr.org.lb/register-domain/
-- `.gov.lb` / OMSAR — https://www.bb-online.com/tldinformation/gov.lb.shtml
-- Overview — https://en.wikipedia.org/wiki/.lb
+## 7. النشر بعد أي تعديل
 
----
+من فرع موثوق وبعد نجاح CI:
 
-## 9. Backups (recommended)
+```bash
+npm ci
+npm run lint
+npm test
+```
 
-- **Database:** `npx wrangler d1 export site-creator-d1 --remote --output backup.sql`
-- **Files:** R2 objects can be copied with `npx wrangler r2 object get …` or via
-  the dashboard. Keep periodic copies off Cloudflare for safety.
+ثم أعد أوامر build في الخطوة 3 باستخدام موارد الإنتاج، وطبّق الخطوة 4 إذا
+أضيف migration جديد، وبعدها:
 
----
+```bash
+cd dist/server
+npx wrangler deploy
+```
 
-## What must be set manually (summary)
+لا تحذف D1 أو R2 عند إعادة نشر الكود؛ البيانات منفصلة عن نسخة Worker.
 
-| Item | Where | Notes |
-|------|-------|-------|
-| Cloudflare account | dash.cloudflare.com | Owned by the municipality |
-| `CF_D1_DATABASE_ID` | build env var | From `wrangler d1 create` |
-| `ADMIN_SESSION_SECRET` | `wrangler secret put` | Random; replaces hardcoded temp value |
-| `ADMIN_BOOTSTRAP_PASSWORD_HASH` | `wrangler secret put` | PBKDF2 hash of the admin password |
-| `ADMIN_BOOTSTRAP_USERNAME` / `_DISPLAY_NAME` | `wrangler secret put` | Optional; default `admin` / «مدير الموقع» |
-| `.lb` domain | LBDR registrar / OMSAR | Manual approval, then attach in Cloudflare |
+## 8. فحص ما بعد النشر
+
+- افتح الصفحة الرئيسية وصفحة تفاصيل منشور من الهاتف والكمبيوتر.
+- جرّب الأنواع الأربعة والحقول الديناميكية وحملة Wish تجريبية غير منشورة.
+- عدّل مادة موجودة وجرّب تعطيل حساب الموظف ثم تحقق من انتهاء جلسته.
+- احفظ معلومات التواصل وتأكد من ظهور الحقول غير الفارغة فقط للزائر.
+- ارفع صورة وملفاً وتأكد من ظهورهما في المحتوى العام.
+- أرسل طلب ساكن تجريبياً وتأكد أن مرفقه لا يفتح من دون جلسة Admin.
+- تحقق من `/robots.txt` و`/sitemap.xml` و`/privacy`.
+- راجع logs للأخطاء ثم احذف بيانات الاختبار.
+
+## 9. النسخ الاحتياطي والاستعادة
+
+صدّر D1 إلى ملف مؤرّخ خارج مجلد المستودع:
+
+```bash
+npx wrangler d1 export YOUR_DATABASE_NAME --remote --output "albireh-db-backup.sql"
+```
+
+انسخ محتوى R2 دورياً إلى مساحة منفصلة تملكها البلدية باستخدام أداة متوافقة
+مع R2 أو من خلال إجراءات الحساب. قاعدة البيانات وحدها لا تتضمن الصور.
+
+الحد الأدنى التشغيلي المقترح:
+
+- نسخة D1 يومية مع الاحتفاظ بدورة مناسبة.
+- نسخة R2 أسبوعية وبعد الرفع الكبير.
+- اختبار استعادة فعلي كل ثلاثة أشهر.
+- حماية النسخ وتحديد من يمكنه تنزيلها.
+- حذف النسخ التي تتجاوز مدة سياسة الخصوصية.
+
+## 10. النطاق
+
+اسم Worker الحالي هو `baladiya`، ولذلك يبقى رابط Workers المجاني
+`baladiya.albireh.workers.dev` ما دام subdomain الحساب هو `albireh`.
+
+لإضافة نطاق رسمي، أضفه من إعدادات **Workers & Pages → Domains & Routes**
+بعد أن تملكه البلدية وتضبط DNS. تسجيل نطاق `gov.lb` وإثبات الصفة الرسمية
+إجراء إداري منفصل يجب تنسيقه مع الجهة اللبنانية المعتمدة. إضافة النطاق لا
+تتطلب تغيير الكود.
+
+## 11. التراجع عند وجود مشكلة
+
+أوقف النشر إذا فشل migration أو اختبار الدخول. استخدم سجل إصدارات Worker في
+Cloudflare لإعادة نسخة كود سابقة، ولا ترجع schema قاعدة البيانات عشوائياً.
+استعادة البيانات تتم فقط من نسخة احتياطية مع التحقق من أثرها على السجلات
+الجديدة.
+
+## قائمة القيم اليدوية
+
+| القيمة | المكان | ملاحظة |
+| --- | --- | --- |
+| `CF_D1_DATABASE_ID` | بيئة build | id قاعدة D1 الفعلية |
+| `CF_D1_DATABASE_NAME` | بيئة build | اسم قاعدة الإنتاج |
+| `CF_R2_BUCKET_NAME` | بيئة build | اسم حاوية الإنتاج |
+| `ADMIN_SESSION_SECRET` | Worker secret | قيمة عشوائية طويلة |
+| `ADMIN_BOOTSTRAP_USERNAME` | Worker secret | حساب استعادة مخصص |
+| `ADMIN_BOOTSTRAP_PASSWORD_HASH` | Worker secret | hash بـ 100,000 iteration |
+| `ADMIN_BOOTSTRAP_DISPLAY_NAME` | Worker secret | الاسم الظاهر في اللوحة |
