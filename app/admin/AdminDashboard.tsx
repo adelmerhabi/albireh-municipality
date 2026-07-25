@@ -685,6 +685,16 @@ export function AdminDashboard({
                   </div>
                 ) : null}
                 <div className="resident-request-card__actions">
+                  {request.phone ? (
+                    <a
+                      className="whatsapp-button"
+                      href={whatsappNotifyUrl(request)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      إبلاغ عبر واتساب
+                    </a>
+                  ) : null}
                   {request.status !== "in_review" ? (
                     <button
                       className="publish-button"
@@ -793,4 +803,31 @@ function requestStatusLabel(status: string) {
   if (status === "resolved") return "تمّت المعالجة";
   if (status === "archived") return "مؤرشفة";
   return "جديدة";
+}
+
+// Convert a locally-typed Lebanese phone into wa.me international format.
+function toWhatsAppNumber(phone: string) {
+  let digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.startsWith("961")) return digits;
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  return `961${digits}`;
+}
+
+// Build a wa.me link that opens WhatsApp with a status message pre-written.
+function whatsappNotifyUrl(request: AdminResidentRequest) {
+  const statusLine =
+    request.status === "resolved"
+      ? "تمّت معالجة طلبك."
+      : request.status === "in_review"
+        ? "طلبك قيد المتابعة حالياً."
+        : "استلمنا طلبك وسنعالجه قريباً.";
+  const greeting = request.name ? `مرحباً ${request.name}،` : "مرحباً،";
+  const text = `${greeting}
+بخصوص طلبك لدى بلدية البيرة (رقم المتابعة: ${request.referenceCode}):
+${statusLine}
+شكراً لتواصلكم مع بلدية البيرة.`;
+  return `https://wa.me/${toWhatsAppNumber(
+    request.phone || "",
+  )}?text=${encodeURIComponent(text)}`;
 }
