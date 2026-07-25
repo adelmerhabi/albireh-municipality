@@ -42,6 +42,7 @@ export function AdminDashboard({
     useState<ContentFormType>("announcement");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [tab, setTab] = useState<"create" | "content" | "requests">("create");
 
   const stats = useMemo(
     () => ({
@@ -250,7 +251,34 @@ export function AdminDashboard({
         </div>
       </div>
 
-      <div className="admin-layout">
+      <div className="admin-tabs" role="tablist">
+        <button
+          type="button"
+          className={`admin-tab${tab === "create" ? " is-active" : ""}`}
+          onClick={() => setTab("create")}
+        >
+          ＋ إضافة محتوى
+        </button>
+        <button
+          type="button"
+          className={`admin-tab${tab === "content" ? " is-active" : ""}`}
+          onClick={() => setTab("content")}
+        >
+          المحتوى المنشور
+        </button>
+        <button
+          type="button"
+          className={`admin-tab${tab === "requests" ? " is-active" : ""}`}
+          onClick={() => setTab("requests")}
+        >
+          رسائل الأهالي
+          {stats.newRequests > 0 ? (
+            <span className="admin-tab__badge">{stats.newRequests}</span>
+          ) : null}
+        </button>
+      </div>
+
+      {tab === "create" ? (
         <section className="admin-panel">
           <div className="admin-panel__head">
             <h2>إضافة محتوى</h2>
@@ -549,7 +577,9 @@ export function AdminDashboard({
             </button>
           </form>
         </section>
+      ) : null}
 
+      {tab === "content" ? (
         <section className="admin-panel">
           <div className="admin-panel__head">
             <h2>المحتوى المحفوظ</h2>
@@ -609,9 +639,10 @@ export function AdminDashboard({
             )}
           </div>
         </section>
-      </div>
+      ) : null}
 
-      <section className="admin-panel resident-inbox">
+      {tab === "requests" ? (
+        <section className="admin-panel resident-inbox">
         <div className="admin-panel__head resident-inbox__head">
           <div>
             <h2>رسائل الأهالي</h2>
@@ -741,6 +772,7 @@ export function AdminDashboard({
           )}
         </div>
       </section>
+      ) : null}
     </>
   );
 }

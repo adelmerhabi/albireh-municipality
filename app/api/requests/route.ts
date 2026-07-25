@@ -52,6 +52,9 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+    if (!phone || phone.replace(/\D/g, "").length < 6) {
+      return Response.json({ error: "رقم الهاتف مطلوب" }, { status: 400 });
+    }
     if (photos.length > 3) {
       return Response.json(
         { error: "يمكن إرفاق ثلاث صور كحد أقصى" },

@@ -103,7 +103,7 @@ export function ResidentRequestForm() {
           />
         </div>
         <div className="field">
-          <label htmlFor="request-phone">رقم الهاتف (اختياري)</label>
+          <label htmlFor="request-phone">رقم الهاتف</label>
           <input
             className="form-control"
             id="request-phone"
@@ -111,7 +111,8 @@ export function ResidentRequestForm() {
             type="tel"
             inputMode="tel"
             maxLength={40}
-            placeholder="للتواصل معك عند الحاجة"
+            placeholder="ليتم التواصل معك وإبلاغك بالمستجدات"
+            required
           />
         </div>
       </div>
