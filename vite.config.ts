@@ -1,50 +1,40 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
-import hostingConfig from "./.openai/hosting.json";
-import { sites } from "./build/sites-vite-plugin";
 
-const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
-  "00000000-0000-4000-8000-000000000000";
+// Cloudflare binding names used by the app (see db/ and worker/index.ts).
+const d1 = "DB";
+const r2 = "MEDIA";
 
-const { d1, r2 } = hostingConfig;
+const PLACEHOLDER_DATABASE_ID = "00000000-0000-4000-8000-000000000000";
 
-// Deploy targets can override the D1/R2 identity without editing this file.
-// When unset (local dev, OpenAI Sites), the original placeholder/name values
-// are used, so behaviour is unchanged. Set CF_D1_DATABASE_ID (and optionally
-// the names) when building for a self-owned Cloudflare account. See DEPLOY.md.
+// Deploy targets set the real D1 id/name and R2 bucket via env vars so this
+// file never needs editing. When unset (local dev) the placeholders are used.
+// See DEPLOY.md.
 const d1DatabaseId =
-  process.env.CF_D1_DATABASE_ID || SITE_CREATOR_PLACEHOLDER_DATABASE_ID;
+  process.env.CF_D1_DATABASE_ID || PLACEHOLDER_DATABASE_ID;
 const d1DatabaseName = process.env.CF_D1_DATABASE_NAME || "site-creator-d1";
 const r2BucketName = process.env.CF_R2_BUCKET_NAME || "site-creator-r2";
-
-// macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
-const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
-  d1_databases: d1
-    ? [
-        {
-          binding: d1,
-          database_name: d1DatabaseName,
-          database_id: d1DatabaseId,
-        },
-      ]
-    : [],
-  r2_buckets: r2
-    ? [
-        {
-          binding: r2,
-          bucket_name: r2BucketName,
-        },
-      ]
-    : [],
+  d1_databases: [
+    {
+      binding: d1,
+      database_name: d1DatabaseName,
+      database_id: d1DatabaseId,
+    },
+  ],
+  r2_buckets: [
+    {
+      binding: r2,
+      bucket_name: r2BucketName,
+    },
+  ],
 };
 
 export default defineConfig(async () => {
-  // Keep Wrangler and Miniflare state project-local. These are non-secret tool
-  // settings; application environment belongs in ignored `.env*` files.
+  // Keep Wrangler and Miniflare state project-local.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
   process.env.WRANGLER_LOG_PATH ??= ".wrangler/logs";
   process.env.MINIFLARE_REGISTRY_PATH ??= ".wrangler/registry";
@@ -53,12 +43,8 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    server: isCodexSeatbeltSandbox
-      ? { watch: { useFsEvents: false, usePolling: true } }
-      : undefined,
     plugins: [
       vinext(),
-      sites(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         config: localBindingConfig,
